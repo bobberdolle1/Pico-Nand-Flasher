@@ -275,7 +275,18 @@ def control_operation():
         time.sleep(0.1)
 
 def check_nand_status():
-    global nand_info, manual_select_mode, supported_nand_models
+    global nand_info # <-- Добавьте эту строку
+    try:
+        ser.write(b'STATUS\n')
+        time.sleep(0.5)
+        response = ser.readline().decode().strip()
+        if response.startswith("MODEL:"):
+            nand_info = {"status": "✅ NAND подключен", "model": response.split(":")[1]}
+        else:
+            nand_info = {"status": "❌ NAND не подключен", "model": ""}
+    except Exception as e:
+        print("Ошибка проверки NAND:", e)
+    global manual_select_mode, supported_nand_models
     try:
         # Очистка буфера перед отправкой запроса
         ser.reset_input_buffer()
@@ -590,7 +601,7 @@ def execute_operation():
     # control_thread остановится сам, когда operation_running станет False
 
 def main_menu():
-    global LANG, manual_select_mode
+    global LANG, manual_select_mode, nand_info
     while True:
         clear_screen()
         print(LANG_TEXT[LANG]["title"])
