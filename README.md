@@ -1,7 +1,3 @@
-Хорошо, вот содержимое для файла `README.md`, которое можно использовать в репозитории на GitHub. Оно включает описание на русском и английском языках.
-
----
-
 ## **Pico NAND Flasher**
 
 **NAND Flasher для Raspberry Pi Pico на MicroPython**
