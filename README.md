@@ -184,6 +184,11 @@ supported_nand = {
 ## **Лицензия**
 Этот проект распространяется "как есть", без каких-либо гарантий. Используйте на свой страх и риск. Перед выполнением любых операций с NAND рекомендуется сделать резервную копию данных.
 
+
+## **Обратная связь**
+- TG: @bobberdolle1
+
+  
 ---
 ---
 ## **Pico NAND Flasher**
@@ -372,4 +377,6 @@ supported_nand = {
 ## **License**
 This project is provided "as is," without any warranties. Use at your own risk. It is recommended to back up data before performing any operations on the NAND.
 
-
+ 
+## **Feedback**
+- TG: @bobberdolle1 
