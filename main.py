@@ -8,6 +8,32 @@ import sys
 # === Настройки ===
 BAUDRATE = 921600
 
+# === Константы для NAND операций ===
+# Стандартные размеры spare области для разных размеров страниц
+SPARE_SIZE_2K = 64    # Spare size для страниц 2048 байт
+SPARE_SIZE_4K = 128   # Spare size для страниц 4096 байт
+SPARE_SIZE_DEFAULT = 64
+
+# Команды NAND Flash
+NAND_CMD_READ_START = 0x00
+NAND_CMD_READ_CONFIRM = 0x30
+NAND_CMD_PROGRAM_START = 0x80
+NAND_CMD_PROGRAM_CONFIRM = 0x10
+NAND_CMD_ERASE_START = 0x60
+NAND_CMD_ERASE_CONFIRM = 0xD0
+NAND_CMD_READ_STATUS = 0x70
+NAND_CMD_READ_ID = 0x90
+NAND_CMD_RESET = 0xFF
+
+# Таймауты (в миллисекундах)
+TIMEOUT_READY_DEFAULT = 5000
+TIMEOUT_READY_SHORT = 1000
+TIMEOUT_PROGRAM = 5000
+TIMEOUT_ERASE = 10000
+
+# Количество циклов адреса для современных NAND
+ADDRESS_CYCLES = 5
+
 # === Инициализация UART ===
 # Используем UART0, TX=GP0, RX=GP1 (стандартные пины для USB-CDC на Pico)
 uart = UART(0, baudrate=BAUDRATE, tx=Pin(0), rx=Pin(1))
@@ -43,7 +69,16 @@ we_pin.value(1)  # WE# активен по LOW
 
 # === Базовые функции работы с NAND ===
 
-def wait_for_ready(timeout_ms=5000):
+def get_spare_size(page_size):
+    """Возвращает размер spare области для данного размера страницы"""
+    if page_size == 4096:
+        return SPARE_SIZE_4K
+    elif page_size == 2048:
+        return SPARE_SIZE_2K
+    else:
+        return SPARE_SIZE_DEFAULT
+
+def wait_for_ready(timeout_ms=TIMEOUT_READY_DEFAULT):
     """Ждем, пока NAND будет готов (R/B# = HIGH)"""
     start_time = time.ticks_ms()
     while rb_pin.value() == 0:
@@ -115,11 +150,15 @@ def send_command(cmd):
 
 def read_status():
     """Читает регистр статуса NAND"""
-    send_command(0x70) # Команда Read Status
-    # ce_pin уже активен
-    status = read_byte()
-    ce_pin.value(1) # Деактивировать CE#
-    return status
+    try:
+        send_command(NAND_CMD_READ_STATUS) # Команда Read Status
+        # ce_pin уже активен
+        status = read_byte()
+        ce_pin.value(1) # Деактивировать CE#
+        return status
+    except Exception as e:
+        ce_pin.value(1) # Убедимся, что CE# деактивирован
+        return 0xFF # Возвращаем статус ошибки
 
 def is_status_fail(status):
     """Проверяет, указывает ли статус на ошибку"""
@@ -130,28 +169,33 @@ def is_status_fail(status):
 
 def read_nand_id():
     """Читает ID NAND"""
-    # Отправить команду Read ID
-    send_command(0x90)
-    
-    # Отправить адрес 0x00
-    ale_pin.value(1)
-    write_byte(0x00)
-    ale_pin.value(0)
-    
-    # Активировать CE# и RE# для чтения
-    # ce_pin уже активен (0) после send_command
-    if not wait_for_ready(1000): # Короткий таймаут для ID
-        ce_pin.value(1)
-        return [0xFF, 0xFF, 0xFF, 0xFF] # Возвращаем "пустой" ID при таймауте
-    
-    # Прочитать несколько байт ID
-    id_bytes = []
-    for _ in range(6): # Читаем 6 байт для надежности
-        id_bytes.append(read_byte())
-    
-    ce_pin.value(1) # Деактивировать CE#
-    
-    return id_bytes[:4] # Возвращаем первые 4 байта
+    try:
+        # Отправить команду Read ID
+        send_command(NAND_CMD_READ_ID)
+        
+        # Отправить адрес 0x00
+        ale_pin.value(1)
+        write_byte(0x00)
+        ale_pin.value(0)
+        
+        # Активировать CE# и RE# для чтения
+        # ce_pin уже активен (0) после send_command
+        if not wait_for_ready(TIMEOUT_READY_SHORT): # Короткий таймаут для ID
+            ce_pin.value(1)
+            return [0xFF, 0xFF, 0xFF, 0xFF] # Возвращаем "пустой" ID при таймауте
+        
+        # Прочитать несколько байт ID
+        id_bytes = []
+        for _ in range(6): # Читаем 6 байт для надежности
+            id_bytes.append(read_byte())
+        
+        ce_pin.value(1) # Деактивировать CE#
+        
+        return id_bytes[:4] # Возвращаем первые 4 байта
+        
+    except Exception as e:
+        ce_pin.value(1) # Убедимся, что CE# деактивирован
+        return [0xFF, 0xFF, 0xFF, 0xFF]
 
 # === База поддерживаемых NAND ===
 supported_nand = {
@@ -209,16 +253,16 @@ def read_page(nand_info, page_addr, buffer):
         page_size = nand_info["page_size"]
         block_size = nand_info["block_size"] # Это количество страниц в блоке
         
-        # Шаг 1: Команда Read (00h)
-        send_command(0x00)
+        # Шаг 1: Команда Read
+        send_command(NAND_CMD_READ_START)
         
-        # Шаг 2: Отправить адрес (5 циклов для большинства современных NAND)
+        # Шаг 2: Отправить адрес
         # Формат адреса: Column (0) + Page Address
         full_addr = page_addr * page_size
-        send_address_cycles(full_addr, 5)
+        send_address_cycles(full_addr, ADDRESS_CYCLES)
         
-        # Шаг 3: Команда Read Confirm (30h)
-        send_command(0x30)
+        # Шаг 3: Команда Read Confirm
+        send_command(NAND_CMD_READ_CONFIRM)
         
         # Шаг 4: Ждать готовности
         if not wait_for_ready():
@@ -236,14 +280,8 @@ def read_page(nand_info, page_addr, buffer):
         for i in range(page_size):
             buffer[i] = read_byte()
         
-        # Шаг 7: Прочитать спейр (OOB) - обычно 64 или 128 или 224 байт
-        # Для простоты читаем фиксированное количество, можно уточнить позже
-        spare_size = 64 # Базовое значение, можно адаптировать
-        if page_size == 4096:
-            spare_size = 128
-        elif page_size == 2048:
-            spare_size = 64
-            
+        # Шаг 6: Прочитать спейр (OOB)
+        spare_size = get_spare_size(page_size)
         for i in range(spare_size):
             buffer[page_size + i] = read_byte()
             
@@ -259,34 +297,28 @@ def write_page(nand_info, page_addr, data_buffer):
     """Записывает одну страницу данных и спейр"""
     try:
         page_size = nand_info["page_size"]
-        block_size = nand_info["block_size"]
+        spare_size = get_spare_size(page_size)
         
-        # Шаг 1: Команда Serial Data Input (80h)
-        send_command(0x80)
+        # Шаг 1: Команда Serial Data Input
+        send_command(NAND_CMD_PROGRAM_START)
         
-        # Шаг 2: Отправить адрес (5 циклов)
+        # Шаг 2: Отправить адрес
         full_addr = page_addr * page_size
-        send_address_cycles(full_addr, 5)
+        send_address_cycles(full_addr, ADDRESS_CYCLES)
         
         # Шаг 3: Записать данные страницы
         for i in range(page_size):
             write_byte(data_buffer[i])
         
         # Шаг 4: Записать спейр
-        spare_size = 64
-        if page_size == 4096:
-            spare_size = 128
-        elif page_size == 2048:
-            spare_size = 64
-            
         for i in range(spare_size):
             write_byte(data_buffer[page_size + i])
             
-        # Шаг 5: Команда Program Confirm (10h)
-        send_command(0x10)
+        # Шаг 5: Команда Program Confirm
+        send_command(NAND_CMD_PROGRAM_CONFIRM)
         
         # Шаг 6: Ждать готовности
-        if not wait_for_ready(5000): # Таймаут 5 секунд
+        if not wait_for_ready(TIMEOUT_PROGRAM): # Таймаут для программирования
             ce_pin.value(1)
             return False
             
@@ -310,17 +342,17 @@ def erase_block(nand_info, block_addr):
         block_size = nand_info["block_size"]
         page_addr = block_addr * block_size # Адрес первой страницы блока
         
-        # Шаг 1: Команда Block Erase (60h)
-        send_command(0x60)
+        # Шаг 1: Команда Block Erase
+        send_command(NAND_CMD_ERASE_START)
         
         # Шаг 2: Отправить адрес блока (3 цикла, старшие биты адреса страницы)
         send_address_cycles(page_addr, 3)
         
-        # Шаг 3: Команда Erase Confirm (D0h)
-        send_command(0xD0)
+        # Шаг 3: Команда Erase Confirm
+        send_command(NAND_CMD_ERASE_CONFIRM)
         
         # Шаг 4: Ждать готовности (может занять до нескольких секунд)
-        if not wait_for_ready(10000): # Таймаут 10 секунд
+        if not wait_for_ready(TIMEOUT_ERASE):
             ce_pin.value(1)
             return False
             
@@ -365,12 +397,8 @@ def read_nand():
     info = current_nand[1]
     total_pages = info["blocks"] * info["block_size"]
     page_size = info["page_size"]
-    spare_size = 64
-    if page_size == 4096:
-        spare_size = 128
-    elif page_size == 2048:
-        spare_size = 64
-        
+    spare_size = get_spare_size(page_size)
+    
     page_total_size = page_size + spare_size
     # print(f"Начало чтения {total_pages} страниц по {page_total_size} байт")
 
@@ -407,12 +435,8 @@ def write_nand():
     info = current_nand[1]
     total_pages = info["blocks"] * info["block_size"]
     page_size = info["page_size"]
-    spare_size = 64
-    if page_size == 4096:
-        spare_size = 128
-    elif page_size == 2048:
-        spare_size = 64
-        
+    spare_size = get_spare_size(page_size)
+    
     page_total_size = page_size + spare_size
     # print(f"Начало записи {total_pages} страниц по {page_total_size} байт")
     
