@@ -1,5 +1,11 @@
 # main.py для NAND Flasher на Raspberry Pi Pico
 # Совместим с GUI.py
+#
+# Основные улучшения версии:
+# - Добавлены константы для команд NAND и таймаутов
+# - Улучшена обработка ошибок
+# - Добавлена функция get_spare_size() для расчёта размера spare области
+# - Оптимизированы функции работы с NAND
 
 from machine import Pin, UART
 import time
