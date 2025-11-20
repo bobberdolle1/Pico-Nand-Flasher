@@ -1,64 +1,57 @@
 ```
-# Executable/binary files
-*.exe
-*.dll
+# Dependencies
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+env/
+env.bak/
+venv.bak/
+requirements.txt.bak
+
+# Build artifacts
+build/
+dist/
+*.egg
+*.egg-info/
 *.so
-*.a
-*.obj
-*.out
+*.dylib
+*.dll
+*.exe
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+coverage/
 
 # Logs
 *.log
+*.out
 
-# Environment files
-.env
-.env.local
-*.env.*
-
-# Editor/IDE files
+# Editor/IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*.tmp
-
-# Dependencies
-node_modules/
-venv/
-.venv/
-__pycache__/
-.mypy_cache/
-.pytest_cache/
-dist/
-build/
-target/
-.gradle/
-
-# System files
+*~
 .DS_Store
 Thumbs.db
 
-# Compressed files
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
+# Environment files
+.env
+.env.local
+.env.*
+!.env.example
+
+# OS generated
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 ```

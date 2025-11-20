@@ -99,33 +99,40 @@ class NANDFlasher:
         self.rb_irq_handler = None
         self.setup_rb_irq()
         
-        # Supported NAND chips database
-        self.supported_nand = {
-            # Samsung
-            "Samsung K9F4G08U0A": {"id": [0xEC, 0xD3], "page_size": 2048, "block_size": 128, "blocks": 4096},
-            "Samsung K9F1G08U0A": {"id": [0xEC, 0xF1], "page_size": 2048, "block_size": 128, "blocks": 2048},
-            "Samsung K9F1G08R0A": {"id": [0xEC, 0xF1], "page_size": 2048, "block_size": 64, "blocks": 2048},
-            "Samsung K9GAG08U0M": {"id": [0xEC, 0xD5], "page_size": 4096, "block_size": 256, "blocks": 8192},
-            "Samsung K9T1G08U0M": {"id": [0xEC, 0xF1], "page_size": 2048, "block_size": 128, "blocks": 1024},
-            "Samsung K9F2G08U0M": {"id": [0xEC, 0xDA], "page_size": 2048, "block_size": 128, "blocks": 2048},
-            # Hynix
-            "Hynix HY27US08281A": {"id": [0xAD, 0xF1], "page_size": 2048, "block_size": 128, "blocks": 1024},
-            "Hynix H27UBG8T2A": {"id": [0xAD, 0xD3], "page_size": 4096, "block_size": 256, "blocks": 8192},
-            "Hynix HY27UF082G2B": {"id": [0xAD, 0xF1], "page_size": 2048, "block_size": 128, "blocks": 2048},
-            "Hynix H27U4G8F2D": {"id": [0xAD, 0xD5], "page_size": 4096, "block_size": 256, "blocks": 4096},
-            "Hynix H27U4G8F2DTR": {"id": [0xAD, 0xD5], "page_size": 4096, "block_size": 256, "blocks": 4096},
-            # Toshiba
-            "Toshiba TC58NVG2S3E": {"id": [0x98, 0xDA], "page_size": 2048, "block_size": 128, "blocks": 2048},
-            "Toshiba TC58NVG3S0F": {"id": [0x98, 0xF1], "page_size": 4096, "block_size": 256, "blocks": 4096},
-            # Micron
-            "Micron MT29F4G08ABA": {"id": [0x2C, 0xDC], "page_size": 4096, "block_size": 256, "blocks": 4096},
-            "Micron MT29F8G08ABACA": {"id": [0x2C, 0x68], "page_size": 4096, "block_size": 256, "blocks": 8192},
-            # Intel
-            "Intel JS29F32G08AAMC1": {"id": [0x89, 0xD3], "page_size": 4096, "block_size": 256, "blocks": 8192},
-            "Intel JS29F64G08ACMF3": {"id": [0x89, 0xD7], "page_size": 4096, "block_size": 256, "blocks": 16384},
-            # SanDisk
-            "SanDisk SDTNQGAMA-008G": {"id": [0x45, 0xD7], "page_size": 4096, "block_size": 256, "blocks": 8192}
-        }
+        # Initialize plugin manager for NAND chip support
+        try:
+            from plugin_system import PluginManager
+            self.plugin_manager = PluginManager()
+            self.supported_nand = self._get_supported_nand_from_plugins()
+        except ImportError:
+            # Fallback to hardcoded list if plugin system not available
+            self.plugin_manager = None
+            self.supported_nand = {
+                # Samsung
+                "Samsung K9F4G08U0A": {"id": [0xEC, 0xD3], "page_size": 2048, "block_size": 128, "blocks": 4096},
+                "Samsung K9F1G08U0A": {"id": [0xEC, 0xF1], "page_size": 2048, "block_size": 128, "blocks": 2048},
+                "Samsung K9F1G08R0A": {"id": [0xEC, 0xF1], "page_size": 2048, "block_size": 64, "blocks": 2048},
+                "Samsung K9GAG08U0M": {"id": [0xEC, 0xD5], "page_size": 4096, "block_size": 256, "blocks": 8192},
+                "Samsung K9T1G08U0M": {"id": [0xEC, 0xF1], "page_size": 2048, "block_size": 128, "blocks": 1024},
+                "Samsung K9F2G08U0M": {"id": [0xEC, 0xDA], "page_size": 2048, "block_size": 128, "blocks": 2048},
+                # Hynix
+                "Hynix HY27US08281A": {"id": [0xAD, 0xF1], "page_size": 2048, "block_size": 128, "blocks": 1024},
+                "Hynix H27UBG8T2A": {"id": [0xAD, 0xD3], "page_size": 4096, "block_size": 256, "blocks": 8192},
+                "Hynix HY27UF082G2B": {"id": [0xAD, 0xF1], "page_size": 2048, "block_size": 128, "blocks": 2048},
+                "Hynix H27U4G8F2D": {"id": [0xAD, 0xD5], "page_size": 4096, "block_size": 256, "blocks": 4096},
+                "Hynix H27U4G8F2DTR": {"id": [0xAD, 0xD5], "page_size": 4096, "block_size": 256, "blocks": 4096},
+                # Toshiba
+                "Toshiba TC58NVG2S3E": {"id": [0x98, 0xDA], "page_size": 2048, "block_size": 128, "blocks": 2048},
+                "Toshiba TC58NVG3S0F": {"id": [0x98, 0xF1], "page_size": 4096, "block_size": 256, "blocks": 4096},
+                # Micron
+                "Micron MT29F4G08ABA": {"id": [0x2C, 0xDC], "page_size": 4096, "block_size": 256, "blocks": 4096},
+                "Micron MT29F8G08ABACA": {"id": [0x2C, 0x68], "page_size": 4096, "block_size": 256, "blocks": 8192},
+                # Intel
+                "Intel JS29F32G08AAMC1": {"id": [0x89, 0xD3], "page_size": 4096, "block_size": 256, "blocks": 8192},
+                "Intel JS29F64G08ACMF3": {"id": [0x89, 0xD7], "page_size": 4096, "block_size": 256, "blocks": 16384},
+                # SanDisk
+                "SanDisk SDTNQGAMA-008G": {"id": [0x45, 0xD7], "page_size": 4096, "block_size": 256, "blocks": 8192}
+            }
         
         self.current_nand = (None, None)
         
@@ -137,6 +144,22 @@ class NANDFlasher:
         # Compression settings
         self.use_compression = True
         self.skip_blank_pages = True
+    
+    def _get_supported_nand_from_plugins(self):
+        """Get supported NAND chips from plugin system"""
+        if self.plugin_manager:
+            supported = {}
+            for plugin in self.plugin_manager.get_all_plugins():
+                key = f"{plugin.manufacturer} {plugin.name}"
+                supported[key] = {
+                    "id": plugin.chip_id,
+                    "page_size": plugin.page_size,
+                    "block_size": plugin.block_size,
+                    "blocks": plugin.total_blocks
+                }
+            return supported
+        else:
+            return {}
     
     def setup_pio(self):
         """Setup PIO state machine for high-speed I/O operations"""
@@ -340,12 +363,21 @@ class NANDFlasher:
             return (None, None)
     
     def calculate_chunk_hash(self, data):
-        """Calculate simple hash for data verification"""
-        # Simple XOR-based hash (in real implementation, use CRC32 or similar)
-        hash_val = 0
+        """Calculate CRC32 hash for data verification"""
+        # CRC32 implementation for MicroPython
+        # Using the standard CRC32 polynomial 0xEDB88320
+        crc = 0xFFFFFFFF  # Start with all 1s
         for byte in data:
-            hash_val ^= byte
-        return hash_val
+            # XOR the byte into the least significant byte of crc
+            crc ^= byte
+            # Process each bit
+            for _ in range(8):
+                if crc & 1:  # If LSB is set
+                    crc = (crc >> 1) ^ 0xEDB88320
+                else:
+                    crc >>= 1
+        # Return the bitwise complement
+        return crc ^ 0xFFFFFFFF
     
     def compress_data(self, data):
         """Compress data using simple RLE (Run-Length Encoding)"""

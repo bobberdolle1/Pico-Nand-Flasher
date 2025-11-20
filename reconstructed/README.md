@@ -2,6 +2,9 @@
 
 This is a reconstructed and improved version of the NAND Flasher project for Raspberry Pi Pico using MicroPython. This tool allows you to use a Raspberry Pi Pico as a programmer (flasher) to read, write, and erase NAND Flash memory.
 
+## Version
+Current version: 1.2.0 (semantic versioning)
+
 ## Table of Contents
 - [About](#about)
 - [Features](#features)
@@ -28,6 +31,17 @@ This project consists of two main components:
 - Progress tracking
 - Multi-language support (Russian/English)
 - Safety controls (pause, resume, cancel)
+- **Enhanced Performance**: PIO (Programmable I/O) and DMA for faster I/O operations
+- **Data Compression**: RLE (Run-Length Encoding) to reduce data transfer volume
+- **Data Integrity**: CRC32 for reliable data verification
+- **Blank Page Skipping**: Accelerate operations by skipping fully 0xFF pages
+- **Power Monitoring**: VSYS voltage monitoring to prevent failures
+- **Operation Resumption**: Ability to continue interrupted operations from last saved position
+- **Plugin Architecture**: Support for plugins for different NAND chip types
+- **Modern GUI**: PyQt6 interface with tabs, progress bars, and logs
+- **Dump Analysis Tools**: Hex view, string search, statistics
+- **Unit Tests**: Coverage of core functions for reliability
+- **CI/CD**: Automated testing via GitHub Actions
 
 ## Hardware Requirements
 
