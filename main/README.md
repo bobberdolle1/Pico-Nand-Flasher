@@ -1,6 +1,6 @@
-# Pico NAND Flasher - Reconstructed
+# Pico NAND Flasher - Main Application
 
-This is a reconstructed and improved version of the NAND Flasher project for Raspberry Pi Pico using MicroPython. This tool allows you to use a Raspberry Pi Pico as a programmer (flasher) to read, write, and erase NAND Flash memory.
+This is the main application directory for the reconstructed and improved NAND Flasher project for Raspberry Pi Pico using MicroPython. This tool allows you to use a Raspberry Pi Pico as a programmer (flasher) to read, write, and erase NAND Flash memory.
 
 ## Version
 Current version: 1.2.0 (semantic versioning)
@@ -42,6 +42,33 @@ This project consists of two main components:
 - **Dump Analysis Tools**: Hex view, string search, statistics
 - **Unit Tests**: Coverage of core functions for reliability
 - **CI/CD**: Automated testing via GitHub Actions
+
+## Project Structure
+
+```
+main/
+├── __init__.py          # Package initialization
+├── i18n.py             # Internationalization module (Russian/English)
+├── setup.py            # Package setup configuration
+├── requirements.txt    # Python dependencies
+├── LICENSE            # MIT License
+├── README.md          # Project documentation
+├── docs/              # Documentation files
+│   ├── USAGE.md       # Usage instructions
+│   └── DEVELOPMENT.md # Development guidelines
+├── gui/               # GUI application code
+│   └── GUI.py         # Main GUI application
+├── pico/              # Raspberry Pi Pico code
+│   └── main.py        # Pico-side implementation
+├── src/               # Source code modules
+│   ├── __init__.py
+│   ├── cli/           # Command-line interface
+│   ├── config/        # Configuration modules
+│   ├── gui/           # GUI modules
+│   ├── hardware/      # Hardware interaction modules
+│   └── utils/         # Utility modules
+└── tests/             # Unit tests
+```
 
 ## Hardware Requirements
 
