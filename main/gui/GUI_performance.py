@@ -9,6 +9,7 @@ Features implemented:
 - Data compression/decompression
 - Better error handling and progress tracking
 """
+
 import os
 import sys
 import time
@@ -47,8 +48,19 @@ class NANDFlasherGUI:
             "RU": {
                 "title": "🚀 Pico NAND Flasher (Performance) 🚀",
                 "footer": "😊 сделал с любовью - bobberdolle1 😊",
-                "menu": ["📁 Операции с NAND", "📘 Инструкция", "🌍 Сменить язык", "⚙️ Настройки", "🚪 Выход"],
-                "operations": ["📂 Выбрать дамп", "🔧 Выбрать операцию", "✅ Подтвердить операцию", "🔙 Назад"],
+                "menu": [
+                    "📁 Операции с NAND",
+                    "📘 Инструкция",
+                    "🌍 Сменить язык",
+                    "⚙️ Настройки",
+                    "🚪 Выход",
+                ],
+                "operations": [
+                    "📂 Выбрать дамп",
+                    "🔧 Выбрать операцию",
+                    "✅ Подтвердить операцию",
+                    "🔙 Назад",
+                ],
                 "nand_operations": ["📥 Прочитать NAND", "📤 Записать NAND", "🧹 Очистить NAND"],
                 "progress": "⏳ Выполняется",
                 "instruction": (
@@ -117,13 +129,24 @@ class NANDFlasherGUI:
                 "resume_operation": "Продолжить прерванную операцию: ",
                 "resume_prompt": "Найдена прерванная операция. Продолжить с блока {}? (y/n): ",
                 "power_warning": "⚠️ Предупреждение о питании: ",
-                "settings_saved": "⚙️ Настройки сохранены"
+                "settings_saved": "⚙️ Настройки сохранены",
             },
             "EN": {
                 "title": "🚀 Pico NAND Flasher (Performance) 🚀",
                 "footer": "😊 made with love by bobberdolle1 😊",
-                "menu": ["📁 NAND Operations", "📘 Instruction", "🌍 Change Language", "⚙️ Settings", "🚪 Exit"],
-                "operations": ["📂 Select Dump", "🔧 Select Operation", "✅ Confirm Operation", "🔙 Back"],
+                "menu": [
+                    "📁 NAND Operations",
+                    "📘 Instruction",
+                    "🌍 Change Language",
+                    "⚙️ Settings",
+                    "🚪 Exit",
+                ],
+                "operations": [
+                    "📂 Select Dump",
+                    "🔧 Select Operation",
+                    "✅ Confirm Operation",
+                    "🔙 Back",
+                ],
                 "nand_operations": ["📥 Read NAND", "📤 Write NAND", "🧹 Erase NAND"],
                 "progress": "⏳ Processing",
                 "instruction": (
@@ -192,18 +215,19 @@ class NANDFlasherGUI:
                 "resume_operation": "Resume interrupted operation: ",
                 "resume_prompt": "Found interrupted operation. Resume from block {}? (y/n): ",
                 "power_warning": "⚠️ Power supply warning: ",
-                "settings_saved": "⚙️ Settings saved"
-            }
+                "settings_saved": "⚙️ Settings saved",
+            },
         }
 
     def clear_screen(self):
         """Clear the console screen"""
-        os.system('cls' if os.name == 'nt' else 'clear')
+        os.system("cls" if os.name == "nt" else "clear")
 
     def get_key(self):
         """Get a keypress from the user"""
         try:
             import msvcrt
+
             if msvcrt.kbhit():
                 return msvcrt.getch().decode().lower()
             return None
@@ -212,6 +236,7 @@ class NANDFlasherGUI:
             import sys
             import termios
             import tty
+
             dr, _, _ = select.select([sys.stdin], [], [], 0)
             if dr:
                 old_settings = termios.tcgetattr(sys.stdin)
@@ -228,7 +253,11 @@ class NANDFlasherGUI:
         ports = list(serial.tools.list_ports.comports())
         for port in ports:
             # More general way to find Pico
-            if "Pico" in port.description or "Serial" in port.description or "UART" in port.description:
+            if (
+                "Pico" in port.description
+                or "Serial" in port.description
+                or "UART" in port.description
+            ):
                 self.COM_PORT = port.device
                 print(f"{self.LANG_TEXT[self.LANG]['com_found']}{self.COM_PORT}")
                 return True
@@ -264,9 +293,15 @@ class NANDFlasherGUI:
         root = Tk()
         root.withdraw()
         # Open file dialog
-        self.selected_dump = filedialog.askopenfilename(title=self.LANG_TEXT[self.LANG]["selected_dump"])
+        self.selected_dump = filedialog.askopenfilename(
+            title=self.LANG_TEXT[self.LANG]["selected_dump"]
+        )
         root.destroy()
-        print(f"{self.LANG_TEXT[self.LANG]['selected_dump']}{self.selected_dump}" if self.selected_dump else self.LANG_TEXT[self.LANG]["no_dump"])
+        print(
+            f"{self.LANG_TEXT[self.LANG]['selected_dump']}{self.selected_dump}"
+            if self.selected_dump
+            else self.LANG_TEXT[self.LANG]["no_dump"]
+        )
 
     def save_dump(self):
         """Save a dump file"""
@@ -275,10 +310,14 @@ class NANDFlasherGUI:
         self.selected_dump = filedialog.asksaveasfilename(
             title="Сохранить дамп как",
             defaultextension=".bin",
-            filetypes=[("Binary files", "*.bin"), ("All files", "*.*")]
+            filetypes=[("Binary files", "*.bin"), ("All files", "*.*")],
         )
         root.destroy()
-        print(f"{self.LANG_TEXT[self.LANG]['dump_saved']}{self.selected_dump}" if self.selected_dump else self.LANG_TEXT[self.LANG]["no_dump"])
+        print(
+            f"{self.LANG_TEXT[self.LANG]['dump_saved']}{self.selected_dump}"
+            if self.selected_dump
+            else self.LANG_TEXT[self.LANG]["no_dump"]
+        )
         return self.selected_dump
 
     def select_operation(self):
@@ -299,21 +338,21 @@ class NANDFlasherGUI:
     def print_progress(self, progress, total=100, bar_length=30):
         """Print a progress bar"""
         filled = int(bar_length * progress // total)
-        bar = '█' * filled + '-' * (bar_length - filled)
-        print(f"\r{self.LANG_TEXT[self.LANG]['progress']}: |{bar}| {progress}%", end='', flush=True)
+        bar = "█" * filled + "-" * (bar_length - filled)
+        print(f"\r{self.LANG_TEXT[self.LANG]['progress']}: |{bar}| {progress}%", end="", flush=True)
 
     def control_operation(self):
         """Control the ongoing operation (pause, resume, cancel)"""
         print(f"\n{self.LANG_TEXT[self.LANG]['op_controls']}")
         while self.operation_running.is_set():
             key = self.get_key()
-            if key == 'p':
+            if key == "p":
                 self.pause_operation.set()
                 print("\n[Пауза]")
-            elif key == 'r':
+            elif key == "r":
                 self.pause_operation.clear()
                 print("\n[Продолжено]")
-            elif key == 'c':
+            elif key == "c":
                 self.cancel_operation.set()
                 self.operation_running.clear()
                 print("\n[Отмена...]")
@@ -326,13 +365,13 @@ class NANDFlasherGUI:
         try:
             # Clear buffer before sending request
             self.ser.reset_input_buffer()
-            self.ser.write(b'STATUS\n')
+            self.ser.write(b"STATUS\n")
 
             start_time = time.time()
             timeout = 5  # 5 second timeout
             while time.time() - start_time < timeout:
                 if self.ser.in_waiting > 0:
-                    response = self.ser.readline().decode('utf-8', errors='ignore').strip()
+                    response = self.ser.readline().decode("utf-8", errors="ignore").strip()
 
                     if response.startswith("MODEL:"):
                         model_name = response.split(":", 1)[1]
@@ -367,12 +406,12 @@ class NANDFlasherGUI:
             timeout = 10
             while time.time() - start_time < timeout:
                 if self.ser.in_waiting > 0:
-                    line = self.ser.readline().decode('utf-8', errors='ignore').strip()
+                    line = self.ser.readline().decode("utf-8", errors="ignore").strip()
                     if line == "MANUAL_SELECT_END":
                         break
                     elif line == "MANUAL_SELECT_START":
                         continue  # Skip start marker
-                    elif ':' in line:
+                    elif ":" in line:
                         # Expect format "number:ModelName"
                         try:
                             num, name = line.split(":", 1)
@@ -444,7 +483,11 @@ class NANDFlasherGUI:
 
                     # Update progress
                     progress = int((total_sent / file_size) * 100)
-                    print(f"\r{self.LANG_TEXT[self.LANG]['dump_send_progress']}{progress}%", end='', flush=True)
+                    print(
+                        f"\r{self.LANG_TEXT[self.LANG]['dump_send_progress']}{progress}%",
+                        end="",
+                        flush=True,
+                    )
 
                     # Small pause so Pico can process
                     # time.sleep(0.01)
@@ -459,13 +502,13 @@ class NANDFlasherGUI:
         """Check power supply status from Pico"""
         try:
             self.ser.reset_input_buffer()
-            self.ser.write(b'POWER_CHECK\n')
+            self.ser.write(b"POWER_CHECK\n")
 
             start_time = time.time()
             timeout = 3  # 3 second timeout
             while time.time() - start_time < timeout:
                 if self.ser.in_waiting > 0:
-                    response = self.ser.readline().decode('utf-8', errors='ignore').strip()
+                    response = self.ser.readline().decode("utf-8", errors="ignore").strip()
                     if response.startswith("POWER:"):
                         power_info = response.split(":", 1)[1]
                         return power_info
@@ -476,7 +519,7 @@ class NANDFlasherGUI:
 
     def execute_operation(self):
         """Execute the selected operation"""
-        if self.nand_info['status'] != "✅ NAND подключен":
+        if self.nand_info["status"] != "✅ NAND подключен":
             print(self.LANG_TEXT[self.LANG]["operation_not_possible"])
             time.sleep(2)
             return
@@ -494,7 +537,10 @@ class NANDFlasherGUI:
                     return  # If user declined, exit
 
         # Confirmation for destructive operations
-        if self.selected_operation in [self.LANG_TEXT[self.LANG]["nand_operations"][1], self.LANG_TEXT[self.LANG]["nand_operations"][2]]:  # WRITE, ERASE
+        if self.selected_operation in [
+            self.LANG_TEXT[self.LANG]["nand_operations"][1],
+            self.LANG_TEXT[self.LANG]["nand_operations"][2],
+        ]:  # WRITE, ERASE
             confirm = input(self.LANG_TEXT[self.LANG]["warning"])
             if confirm.lower() != "y":
                 print(self.LANG_TEXT[self.LANG]["operation_cancelled"])
@@ -508,9 +554,9 @@ class NANDFlasherGUI:
             try:
                 # Determine command
                 command_map = {
-                    self.LANG_TEXT[self.LANG]["nand_operations"][0]: b'READ\n',   # READ
-                    self.LANG_TEXT[self.LANG]["nand_operations"][1]: b'WRITE\n',  # WRITE
-                    self.LANG_TEXT[self.LANG]["nand_operations"][2]: b'ERASE\n'   # ERASE
+                    self.LANG_TEXT[self.LANG]["nand_operations"][0]: b"READ\n",  # READ
+                    self.LANG_TEXT[self.LANG]["nand_operations"][1]: b"WRITE\n",  # WRITE
+                    self.LANG_TEXT[self.LANG]["nand_operations"][2]: b"ERASE\n",  # ERASE
                 }
                 command = command_map.get(self.selected_operation)
 
@@ -520,11 +566,13 @@ class NANDFlasherGUI:
 
                 # Check if there's a resume point
                 if self.last_resume_block > 0:
-                    resume_prompt = self.LANG_TEXT[self.LANG]["resume_prompt"].format(self.last_resume_block)
+                    resume_prompt = self.LANG_TEXT[self.LANG]["resume_prompt"].format(
+                        self.last_resume_block
+                    )
                     resume_confirm = input(resume_prompt)
-                    if resume_confirm.lower() == 'y':
+                    if resume_confirm.lower() == "y":
                         # Set resume point on Pico
-                        self.ser.write(f'SET_RESUME:{self.last_resume_block}\n'.encode())
+                        self.ser.write(f"SET_RESUME:{self.last_resume_block}\n".encode())
                         time.sleep(0.5)
 
                 # Send command
@@ -533,10 +581,10 @@ class NANDFlasherGUI:
                 print(f"Команда '{self.selected_operation}' отправлена на Pico.")
 
                 # Special logic for WRITE
-                if command == b'WRITE\n':
+                if command == b"WRITE\n":
                     if not self.selected_dump or not os.path.exists(self.selected_dump):
                         print(f"\n{self.LANG_TEXT[self.LANG]['dump_load_error']}")
-                        self.ser.write(b'CANCEL\n')  # Cancel operation on Pico
+                        self.ser.write(b"CANCEL\n")  # Cancel operation on Pico
                         return
 
                     # Wait for signal from Pico that it's ready to receive data
@@ -549,7 +597,6 @@ class NANDFlasherGUI:
 
                 # --- Process responses from Pico ---
                 dump_data = bytearray()  # To accumulate data during read
-                is_reading_dump = False
 
                 start_time = time.time()
                 timeout = 300  # 5 minute timeout by default
@@ -571,7 +618,7 @@ class NANDFlasherGUI:
                         # Try to read a line (until \n)
                         line_bytes = self.ser.readline()
                         try:
-                            line = line_bytes.decode('utf-8').strip()
+                            line = line_bytes.decode("utf-8").strip()
 
                             # Process string responses
                             if line.startswith("PROGRESS:"):
@@ -583,16 +630,20 @@ class NANDFlasherGUI:
 
                             elif line.startswith("POWER_WARNING:"):
                                 power_warning = line.split(":", 1)[1]
-                                print(f"\n{self.LANG_TEXT[self.LANG]['power_warning']}{power_warning}")
+                                print(
+                                    f"\n{self.LANG_TEXT[self.LANG]['power_warning']}{power_warning}"
+                                )
 
                             elif line == "OPERATION_COMPLETE":
                                 # If this was a read, save accumulated data
-                                if command == b'READ\n' and dump_data:
+                                if command == b"READ\n" and dump_data:
                                     if self.save_dump():  # User selected path
                                         try:
                                             with open(self.selected_dump, "wb") as f:
                                                 f.write(dump_data)
-                                            print(f"\n{self.LANG_TEXT[self.LANG]['dump_saved']}{self.selected_dump}")
+                                            print(
+                                                f"\n{self.LANG_TEXT[self.LANG]['dump_saved']}{self.selected_dump}"
+                                            )
                                         except Exception as e:
                                             print(f"\nОшибка сохранения дампа: {e}")
 
@@ -609,7 +660,7 @@ class NANDFlasherGUI:
 
                         except UnicodeDecodeError:
                             # This is likely binary dump data
-                            if command == b'READ\n':
+                            if command == b"READ\n":
                                 dump_data.extend(line_bytes)
                                 # Can update progress based on size if we know total
                                 # But it's easier to trust PROGRESS messages from Pico
@@ -623,7 +674,7 @@ class NANDFlasherGUI:
 
                     # Check for cancel
                     if self.cancel_operation.is_set():
-                        self.ser.write(b'CANCEL\n')  # Send cancel signal if Pico listens
+                        self.ser.write(b"CANCEL\n")  # Send cancel signal if Pico listens
                         print("\n🚫 Операция отменена пользователем!")
                         break
 
@@ -636,12 +687,14 @@ class NANDFlasherGUI:
                 self.cancel_operation.clear()  # Reset cancel flag
                 # If operation was read and data exists but no OPERATION_COMPLETE,
                 # try to save what we got
-                if command == b'READ\n' and dump_data and self.selected_dump:
+                if command == b"READ\n" and dump_data and self.selected_dump:
                     try:
                         with open(self.selected_dump + ".partial", "wb") as f:
                             f.write(dump_data)
-                        print(f"\n⚠️ Операция прервана. Частичный дамп сохранен в: {self.selected_dump}.partial")
-                    except:
+                        print(
+                            f"\n⚠️ Операция прервана. Частичный дамп сохранен в: {self.selected_dump}.partial"
+                        )
+                    except Exception:
                         pass
 
         # Start threads
@@ -696,7 +749,7 @@ class NANDFlasherGUI:
                 self.check_nand_status()
 
             print(f"\n{self.LANG_TEXT[self.LANG]['nand_status']}{self.nand_info['status']}")
-            if self.nand_info['model']:
+            if self.nand_info["model"]:
                 print(f"{self.LANG_TEXT[self.LANG]['nand_model']}{self.nand_info['model']}")
 
             # If in manual selection mode, show selection menu
@@ -711,10 +764,10 @@ class NANDFlasherGUI:
                     if choice == "0":
                         # Send cancel to Pico
                         try:
-                            self.ser.write(b'n\n')  # Answer 'n' to "Continue manually?"
+                            self.ser.write(b"n\n")  # Answer 'n' to "Continue manually?"
                             self.manual_select_mode = False
                             self.nand_info = {"status": "❌ NAND не подключен", "model": ""}
-                        except:
+                        except Exception:
                             pass
                     else:
                         # Handle selection
@@ -738,15 +791,19 @@ class NANDFlasherGUI:
                 print(f"{i + 1}. {item}")
             print(f"\n{self.LANG_TEXT[self.LANG]['footer']}")
             choice = input("> ")
-            if choice == "1": self.nand_menu()
-            elif choice == "2": self.show_instruction()
-            elif choice == "3": self.LANG = "EN" if self.LANG == "RU" else "RU"
-            elif choice == "4": self.settings_menu()
+            if choice == "1":
+                self.nand_menu()
+            elif choice == "2":
+                self.show_instruction()
+            elif choice == "3":
+                self.LANG = "EN" if self.LANG == "RU" else "RU"
+            elif choice == "4":
+                self.settings_menu()
             elif choice == "5":
                 if self.ser and self.ser.is_open:
                     try:
-                        self.ser.write(b'EXIT\n')
-                    except:
+                        self.ser.write(b"EXIT\n")
+                    except Exception:
                         pass
                     self.ser.close()
                 sys.exit()
@@ -763,10 +820,14 @@ class NANDFlasherGUI:
                 print(f"{i + 1}. {op}")
             print(f"\n{self.LANG_TEXT[self.LANG]['footer']}")
             choice = input("> ")
-            if choice == "1": self.select_dump()
-            elif choice == "2": self.select_operation()
-            elif choice == "3": self.execute_operation()
-            elif choice == "4": break
+            if choice == "1":
+                self.select_dump()
+            elif choice == "2":
+                self.select_operation()
+            elif choice == "3":
+                self.execute_operation()
+            elif choice == "4":
+                break
             else:
                 print(self.LANG_TEXT[self.LANG]["invalid_selection"])
             input("\nНажмите Enter для продолжения...")
@@ -807,8 +868,8 @@ def main():
         finally:
             if gui.ser and gui.ser.is_open:
                 try:
-                    gui.ser.write(b'EXIT\n')  # Try to exit Pico gracefully
-                except:
+                    gui.ser.write(b"EXIT\n")  # Try to exit Pico gracefully
+                except Exception:
                     pass
                 gui.ser.close()
                 print("Соединение с Pico закрыто.")

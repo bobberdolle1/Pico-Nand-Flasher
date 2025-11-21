@@ -5,7 +5,7 @@ def _crc16_ccitt(data: bytes, poly: int = 0x1021, init: int = 0xFFFF) -> int:
     """Compute CRC16-CCITT over data (standard variant)."""
     crc = init
     for b in data:
-        crc ^= (b << 8)
+        crc ^= b << 8
         for _ in range(8):
             if crc & 0x8000:
                 crc = ((crc << 1) & 0xFFFF) ^ poly
@@ -34,7 +34,7 @@ def _calc_hamming_512_3byte(buf: bytes) -> bytes:
     parity = [0] * 256
     for i in range(256):
         # parity of number of set bits
-        parity[i] = (bin(i).count("1") & 1)
+        parity[i] = bin(i).count("1") & 1
 
     # Process as 64 little-endian 32-bit words
     rp = [0] * 16  # rp0..rp15
@@ -73,21 +73,21 @@ def _calc_hamming_512_3byte(buf: bytes) -> bytes:
     # Fold 32-bit accumulators to byte for rp4..rp15
     for idx in range(4, 16):
         v = rp[idx]
-        v ^= (v >> 16)
-        v ^= (v >> 8)
+        v ^= v >> 16
+        v ^= v >> 8
         rp[idx] = v & 0xFF
 
     # rp0..rp3 derived from par split across bytes
-    rp[3] = (par >> 16)
-    rp[3] ^= (rp[3] >> 8)
+    rp[3] = par >> 16
+    rp[3] ^= rp[3] >> 8
     rp[3] &= 0xFF
     rp[2] = par & 0xFFFF
-    rp[2] ^= (rp[2] >> 8)
+    rp[2] ^= rp[2] >> 8
     rp[2] &= 0xFF
-    par ^= (par >> 16)
+    par ^= par >> 16
     rp[1] = (par >> 8) & 0xFF
     rp[0] = par & 0xFF
-    par ^= (par >> 8)
+    par ^= par >> 8
     par &= 0xFF
 
     # Build code bytes from parities
@@ -149,7 +149,7 @@ def verify_and_correct(
         if not oob or len(oob) < 2:
             return data, errors
         calc = _crc16_ccitt(data)
-        stored = int.from_bytes(oob[0:2], 'little')
+        stored = int.from_bytes(oob[0:2], "little")
         if calc != stored:
             return data, [-1]
         return data, errors

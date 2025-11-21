@@ -12,6 +12,7 @@ Features implemented:
 - Power supply monitoring via Pico ADC
 - Chunk-based hash verification
 """
+
 import struct
 import sys
 import time
@@ -22,24 +23,33 @@ from rp2 import PIO, StateMachine, asm_pio
 
 # Define PIO program for efficient I/O operations
 @asm_pio(
-    out_init=(PIO.OUT_LOW, PIO.OUT_LOW, PIO.OUT_LOW, PIO.OUT_LOW,
-              PIO.OUT_LOW, PIO.OUT_LOW, PIO.OUT_LOW, PIO.OUT_LOW),
+    out_init=(
+        PIO.OUT_LOW,
+        PIO.OUT_LOW,
+        PIO.OUT_LOW,
+        PIO.OUT_LOW,
+        PIO.OUT_LOW,
+        PIO.OUT_LOW,
+        PIO.OUT_LOW,
+        PIO.OUT_LOW,
+    ),
     sideset_init=(PIO.OUT_HIGH, PIO.OUT_HIGH),  # WE#, RE#
     autopull=True,
     pull_thresh=32,
 )
 def nand_io_program():
     # Output mode: write data to NAND
-    pull()                    .side(0b11)       # WE#=HIGH, RE#=HIGH (idle)
-    mov(osr, null)            .side(0b11)       # Clear OSR
-    out(pins, 8)              .side(0b10)       # Set data on pins, WE#=LOW, RE#=HIGH
-    nop()                     .side(0b11)       # WE#=HIGH, RE#=HIGH (latch data)
+    pull().side(0b11)  # WE#=HIGH, RE#=HIGH (idle)
+    mov(osr, null).side(0b11)  # Clear OSR
+    out(pins, 8).side(0b10)  # Set data on pins, WE#=LOW, RE#=HIGH
+    nop().side(0b11)  # WE#=HIGH, RE#=HIGH (latch data)
     # Input mode: read data from NAND
-    pull()                    .side(0b11)       # WE#=HIGH, RE#=HIGH (idle)
-    mov(osr, null)            .side(0b11)       # Clear OSR
-    nop()                     .side(0b01)       # WE#=HIGH, RE#=LOW (enable output)
-    in_(pins, 8)              .side(0b01)       # Read data, keep RE#=LOW
-    push()                    .side(0b11)       # Push to FIFO, WE#=HIGH, RE#=HIGH
+    pull().side(0b11)  # WE#=HIGH, RE#=HIGH (idle)
+    mov(osr, null).side(0b11)  # Clear OSR
+    nop().side(0b01)  # WE#=HIGH, RE#=LOW (enable output)
+    in_(pins, 8).side(0b01)  # Read data, keep RE#=LOW
+    push().side(0b11)  # Push to FIFO, WE#=HIGH, RE#=HIGH
+
 
 class NANDFlasher:
     """Main class for NAND Flash operations on Raspberry Pi Pico with enhanced performance features"""
@@ -54,23 +64,23 @@ class NANDFlasher:
 
         # Initialize NAND interface pins
         self.io_pins = [
-            Pin(5, Pin.IN, Pin.PULL_UP),   # I/O0 - GP5
-            Pin(6, Pin.IN, Pin.PULL_UP),   # I/O1 - GP6
-            Pin(7, Pin.IN, Pin.PULL_UP),   # I/O2 - GP7
-            Pin(8, Pin.IN, Pin.PULL_UP),   # I/O3 - GP8
-            Pin(9, Pin.IN, Pin.PULL_UP),   # I/O4 - GP9
+            Pin(5, Pin.IN, Pin.PULL_UP),  # I/O0 - GP5
+            Pin(6, Pin.IN, Pin.PULL_UP),  # I/O1 - GP6
+            Pin(7, Pin.IN, Pin.PULL_UP),  # I/O2 - GP7
+            Pin(8, Pin.IN, Pin.PULL_UP),  # I/O3 - GP8
+            Pin(9, Pin.IN, Pin.PULL_UP),  # I/O4 - GP9
             Pin(10, Pin.IN, Pin.PULL_UP),  # I/O5 - GP10
             Pin(11, Pin.IN, Pin.PULL_UP),  # I/O6 - GP11
-            Pin(12, Pin.IN, Pin.PULL_UP)   # I/O7 - GP12
+            Pin(12, Pin.IN, Pin.PULL_UP),  # I/O7 - GP12
         ]
 
         # Control pins
-        self.cle_pin = Pin(13, Pin.OUT)    # CLE - GP13
-        self.ale_pin = Pin(14, Pin.OUT)    # ALE - GP14
-        self.ce_pin = Pin(15, Pin.OUT)     # CE# - GP15
-        self.re_pin = Pin(16, Pin.OUT)     # RE# - GP16
-        self.we_pin = Pin(17, Pin.OUT)     # WE# - GP17
-        self.rb_pin = Pin(18, Pin.IN, Pin.PULL_UP)      # R/B# - GP18
+        self.cle_pin = Pin(13, Pin.OUT)  # CLE - GP13
+        self.ale_pin = Pin(14, Pin.OUT)  # ALE - GP14
+        self.ce_pin = Pin(15, Pin.OUT)  # CE# - GP15
+        self.re_pin = Pin(16, Pin.OUT)  # RE# - GP16
+        self.we_pin = Pin(17, Pin.OUT)  # WE# - GP17
+        self.rb_pin = Pin(18, Pin.IN, Pin.PULL_UP)  # R/B# - GP18
 
         # ADC for power supply monitoring
         self.vsys_adc = ADC(29)  # VSYS / 3 voltage
@@ -85,11 +95,11 @@ class NANDFlasher:
         self.we_pin.value(1)  # WE# active LOW
 
         # Timing parameters (in microseconds) - can be adjusted
-        self.tWC = 25      # Write cycle time (adjustable)
-        self.tRC = 25      # Read cycle time (adjustable)
-        self.tREA = 15     # Access time to read (adjustable)
-        self.tRP = 12      # Read pulse width
-        self.tWP = 12      # Write pulse width
+        self.tWC = 25  # Write cycle time (adjustable)
+        self.tRC = 25  # Read cycle time (adjustable)
+        self.tREA = 15  # Access time to read (adjustable)
+        self.tRP = 12  # Read pulse width
+        self.tWP = 12  # Write pulse width
 
         # PIO and DMA setup for high-speed I/O
         self.pio_sm = None
@@ -102,6 +112,7 @@ class NANDFlasher:
         # Initialize plugin manager for NAND chip support
         try:
             from plugin_system import PluginManager
+
             self.plugin_manager = PluginManager()
             self.supported_nand = self._get_supported_nand_from_plugins()
         except ImportError:
@@ -109,29 +120,119 @@ class NANDFlasher:
             self.plugin_manager = None
             self.supported_nand = {
                 # Samsung
-                "Samsung K9F4G08U0A": {"id": [0xEC, 0xD3], "page_size": 2048, "block_size": 128, "blocks": 4096},
-                "Samsung K9F1G08U0A": {"id": [0xEC, 0xF1], "page_size": 2048, "block_size": 128, "blocks": 2048},
-                "Samsung K9F1G08R0A": {"id": [0xEC, 0xF1], "page_size": 2048, "block_size": 64, "blocks": 2048},
-                "Samsung K9GAG08U0M": {"id": [0xEC, 0xD5], "page_size": 4096, "block_size": 256, "blocks": 8192},
-                "Samsung K9T1G08U0M": {"id": [0xEC, 0xF1], "page_size": 2048, "block_size": 128, "blocks": 1024},
-                "Samsung K9F2G08U0M": {"id": [0xEC, 0xDA], "page_size": 2048, "block_size": 128, "blocks": 2048},
+                "Samsung K9F4G08U0A": {
+                    "id": [0xEC, 0xD3],
+                    "page_size": 2048,
+                    "block_size": 128,
+                    "blocks": 4096,
+                },
+                "Samsung K9F1G08U0A": {
+                    "id": [0xEC, 0xF1],
+                    "page_size": 2048,
+                    "block_size": 128,
+                    "blocks": 2048,
+                },
+                "Samsung K9F1G08R0A": {
+                    "id": [0xEC, 0xF1],
+                    "page_size": 2048,
+                    "block_size": 64,
+                    "blocks": 2048,
+                },
+                "Samsung K9GAG08U0M": {
+                    "id": [0xEC, 0xD5],
+                    "page_size": 4096,
+                    "block_size": 256,
+                    "blocks": 8192,
+                },
+                "Samsung K9T1G08U0M": {
+                    "id": [0xEC, 0xF1],
+                    "page_size": 2048,
+                    "block_size": 128,
+                    "blocks": 1024,
+                },
+                "Samsung K9F2G08U0M": {
+                    "id": [0xEC, 0xDA],
+                    "page_size": 2048,
+                    "block_size": 128,
+                    "blocks": 2048,
+                },
                 # Hynix
-                "Hynix HY27US08281A": {"id": [0xAD, 0xF1], "page_size": 2048, "block_size": 128, "blocks": 1024},
-                "Hynix H27UBG8T2A": {"id": [0xAD, 0xD3], "page_size": 4096, "block_size": 256, "blocks": 8192},
-                "Hynix HY27UF082G2B": {"id": [0xAD, 0xF1], "page_size": 2048, "block_size": 128, "blocks": 2048},
-                "Hynix H27U4G8F2D": {"id": [0xAD, 0xD5], "page_size": 4096, "block_size": 256, "blocks": 4096},
-                "Hynix H27U4G8F2DTR": {"id": [0xAD, 0xD5], "page_size": 4096, "block_size": 256, "blocks": 4096},
+                "Hynix HY27US08281A": {
+                    "id": [0xAD, 0xF1],
+                    "page_size": 2048,
+                    "block_size": 128,
+                    "blocks": 1024,
+                },
+                "Hynix H27UBG8T2A": {
+                    "id": [0xAD, 0xD3],
+                    "page_size": 4096,
+                    "block_size": 256,
+                    "blocks": 8192,
+                },
+                "Hynix HY27UF082G2B": {
+                    "id": [0xAD, 0xF1],
+                    "page_size": 2048,
+                    "block_size": 128,
+                    "blocks": 2048,
+                },
+                "Hynix H27U4G8F2D": {
+                    "id": [0xAD, 0xD5],
+                    "page_size": 4096,
+                    "block_size": 256,
+                    "blocks": 4096,
+                },
+                "Hynix H27U4G8F2DTR": {
+                    "id": [0xAD, 0xD5],
+                    "page_size": 4096,
+                    "block_size": 256,
+                    "blocks": 4096,
+                },
                 # Toshiba
-                "Toshiba TC58NVG2S3E": {"id": [0x98, 0xDA], "page_size": 2048, "block_size": 128, "blocks": 2048},
-                "Toshiba TC58NVG3S0F": {"id": [0x98, 0xF1], "page_size": 4096, "block_size": 256, "blocks": 4096},
+                "Toshiba TC58NVG2S3E": {
+                    "id": [0x98, 0xDA],
+                    "page_size": 2048,
+                    "block_size": 128,
+                    "blocks": 2048,
+                },
+                "Toshiba TC58NVG3S0F": {
+                    "id": [0x98, 0xF1],
+                    "page_size": 4096,
+                    "block_size": 256,
+                    "blocks": 4096,
+                },
                 # Micron
-                "Micron MT29F4G08ABA": {"id": [0x2C, 0xDC], "page_size": 4096, "block_size": 256, "blocks": 4096},
-                "Micron MT29F8G08ABACA": {"id": [0x2C, 0x68], "page_size": 4096, "block_size": 256, "blocks": 8192},
+                "Micron MT29F4G08ABA": {
+                    "id": [0x2C, 0xDC],
+                    "page_size": 4096,
+                    "block_size": 256,
+                    "blocks": 4096,
+                },
+                "Micron MT29F8G08ABACA": {
+                    "id": [0x2C, 0x68],
+                    "page_size": 4096,
+                    "block_size": 256,
+                    "blocks": 8192,
+                },
                 # Intel
-                "Intel JS29F32G08AAMC1": {"id": [0x89, 0xD3], "page_size": 4096, "block_size": 256, "blocks": 8192},
-                "Intel JS29F64G08ACMF3": {"id": [0x89, 0xD7], "page_size": 4096, "block_size": 256, "blocks": 16384},
+                "Intel JS29F32G08AAMC1": {
+                    "id": [0x89, 0xD3],
+                    "page_size": 4096,
+                    "block_size": 256,
+                    "blocks": 8192,
+                },
+                "Intel JS29F64G08ACMF3": {
+                    "id": [0x89, 0xD7],
+                    "page_size": 4096,
+                    "block_size": 256,
+                    "blocks": 16384,
+                },
                 # SanDisk
-                "SanDisk SDTNQGAMA-008G": {"id": [0x45, 0xD7], "page_size": 4096, "block_size": 256, "blocks": 8192}
+                "SanDisk SDTNQGAMA-008G": {
+                    "id": [0x45, 0xD7],
+                    "page_size": 4096,
+                    "block_size": 256,
+                    "blocks": 8192,
+                },
             }
 
         self.current_nand = (None, None)
@@ -147,7 +248,7 @@ class NANDFlasher:
 
         # Framed binary protocol (disabled until detected)
         self.binary_mode = False
-        self.MAGIC = b'PF'  # Pico Flasher
+        self.MAGIC = b"PF"  # Pico Flasher
         # Command codes (must match host)
         self.CMD_STATUS = 0x01
         self.CMD_READ = 0x02
@@ -171,7 +272,7 @@ class NANDFlasher:
                     "id": plugin.chip_id,
                     "page_size": plugin.page_size,
                     "block_size": plugin.block_size,
-                    "blocks": plugin.total_blocks
+                    "blocks": plugin.total_blocks,
                 }
             return supported
         else:
@@ -181,7 +282,13 @@ class NANDFlasher:
         """Setup PIO state machine for high-speed I/O operations"""
         try:
             # Create state machine
-            self.pio_sm = StateMachine(0, nand_io_program, freq=125_000_000, sideset_base=self.we_pin, out_base=self.io_pins[0])
+            self.pio_sm = StateMachine(
+                0,
+                nand_io_program,
+                freq=125_000_000,
+                sideset_base=self.we_pin,
+                out_base=self.io_pins[0],
+            )
             self.pio_sm.active(1)
         except Exception as e:
             self.pio_sm = None  # Fall back to GPIO if PIO fails
@@ -189,6 +296,7 @@ class NANDFlasher:
 
     def setup_rb_irq(self):
         """Setup IRQ for R/B# pin monitoring"""
+
         def rb_irq_handler(pin):
             # This could be used to track readiness more efficiently
             pass
@@ -200,13 +308,13 @@ class NANDFlasher:
         """Adjust timing parameters based on test results (autotuning)"""
         # In a real implementation, this would analyze test results
         # and adjust timing parameters accordingly
-        if test_results.get('slow', False):
+        if test_results.get("slow", False):
             self.tWC += 5
             self.tRC += 5
             self.tREA += 5
         else:
             # Try to optimize timing if operations are stable
-            if test_results.get('stable', True):
+            if test_results.get("stable", True):
                 self.tWC = max(10, self.tWC - 1)  # Don't go below minimum
                 self.tRC = max(10, self.tRC - 1)
                 self.tREA = max(5, self.tREA - 1)
@@ -276,7 +384,7 @@ class NANDFlasher:
         # Read data
         data = 0
         for i, pin in enumerate(self.io_pins):
-            data |= (pin.value() << i)
+            data |= pin.value() << i
 
         self.re_pin.value(1)
         time.sleep_us(self.tRC - self.tREA)  # Wait for read cycle time
@@ -321,7 +429,7 @@ class NANDFlasher:
 
     def send_command(self, cmd):
         """Send command to NAND"""
-        self.ce_pin.value(0)   # Activate CE#
+        self.ce_pin.value(0)  # Activate CE#
         self.cle_pin.value(1)  # Set CLE
         self.write_byte(cmd)
         self.cle_pin.value(0)  # Reset CLE
@@ -372,7 +480,7 @@ class NANDFlasher:
             nand_id = self.read_nand_id()
 
             for name, info in self.supported_nand.items():
-                if nand_id[:len(info["id"])] == info["id"]:
+                if nand_id[: len(info["id"])] == info["id"]:
                     return (name, info)
             return (None, None)
         except Exception:
@@ -583,14 +691,14 @@ class NANDFlasher:
         """Read command from UART"""
         data = self.uart.readline()
         if data:
-            return data.decode('utf-8').strip()
+            return data.decode("utf-8").strip()
         return ""
 
     def send_status(self):
         """Send status to GUI"""
         if self.binary_mode:
             model = self.current_nand[0] if self.current_nand[0] else "UNKNOWN"
-            self._send_frame(self.CMD_MODEL, model.encode('utf-8'))
+            self._send_frame(self.CMD_MODEL, model.encode("utf-8"))
         else:
             if self.current_nand[0]:
                 self.uart.write(f"MODEL:{self.current_nand[0]}\n")
@@ -614,7 +722,7 @@ class NANDFlasher:
         """Read entire NAND content with resume capability and compression"""
         if not self.current_nand[0]:
             if self.binary_mode:
-                self._send_frame(self.CMD_ERROR, b'NAND_NOT_CONNECTED')
+                self._send_frame(self.CMD_ERROR, b"NAND_NOT_CONNECTED")
             else:
                 self.uart.write("NAND_NOT_CONNECTED\n")
             return
@@ -644,7 +752,7 @@ class NANDFlasher:
             for page in range(start_page, total_pages):
                 if not self.read_page(info, page, page_buffer):
                     if self.binary_mode:
-                        self._send_frame(self.CMD_ERROR, b'READ_PAGE_FAIL')
+                        self._send_frame(self.CMD_ERROR, b"READ_PAGE_FAIL")
                     else:
                         self.uart.write("OPERATION_FAILED\n")
                     return
@@ -655,7 +763,7 @@ class NANDFlasher:
                 else:
                     # Legacy path with optional compression/blank skipping
                     if self.skip_blank_pages and self.is_blank_page(page_buffer, page_size):
-                        self.uart.write(b'\x00\x00\xFF')
+                        self.uart.write(b"\x00\x00\xFF")
                     else:
                         if self.use_compression:
                             compressed_data = self.compress_data(page_buffer)
@@ -669,7 +777,7 @@ class NANDFlasher:
                 self.save_resume_state("READ", block_num, page_hash)
                 if self.binary_mode:
                     try:
-                        payload_crc = struct.pack('<II', page, page_hash & 0xFFFFFFFF)
+                        payload_crc = struct.pack("<II", page, page_hash & 0xFFFFFFFF)
                         self._send_frame(self.CMD_PAGE_CRC, payload_crc)
                     except Exception:
                         pass
@@ -677,7 +785,9 @@ class NANDFlasher:
                 # Progress (send percent and page index)
                 progress = int((page + 1) * 100 / total_pages)
                 if self.binary_mode:
-                    payload = bytes([progress & 0xFF, (progress >> 8) & 0xFF]) + struct.pack('<I', page)
+                    payload = bytes([progress & 0xFF, (progress >> 8) & 0xFF]) + struct.pack(
+                        "<I", page
+                    )
                     self._send_frame(self.CMD_PROGRESS, payload)
                 else:
                     self.uart.write(f"PROGRESS:{progress}\n")
@@ -687,17 +797,17 @@ class NANDFlasher:
                     power_ok, power_msg = self.check_power_supply()
                     if not power_ok:
                         if self.binary_mode:
-                            self._send_frame(self.CMD_POWER_WARNING, power_msg.encode('utf-8'))
+                            self._send_frame(self.CMD_POWER_WARNING, power_msg.encode("utf-8"))
                         else:
                             self.uart.write(f"POWER_WARNING:{power_msg}\n")
 
             if self.binary_mode:
-                self._send_frame(self.CMD_COMPLETE, b'')
+                self._send_frame(self.CMD_COMPLETE, b"")
             else:
                 self.uart.write("OPERATION_COMPLETE\n")
         except Exception:
             if self.binary_mode:
-                self._send_frame(self.CMD_ERROR, b'EXCEPTION')
+                self._send_frame(self.CMD_ERROR, b"EXCEPTION")
             else:
                 self.uart.write("OPERATION_FAILED\n")
 
@@ -727,7 +837,7 @@ class NANDFlasher:
 
         # Signal that we're ready to receive data
         if self.binary_mode:
-            self._send_frame(self.CMD_READY_FOR_DATA, b'')
+            self._send_frame(self.CMD_READY_FOR_DATA, b"")
         else:
             self.uart.write("READY_FOR_DATA\n")
 
@@ -756,7 +866,12 @@ class NANDFlasher:
                                 bytes_received += len(chunk)
 
                 # Decompress if needed
-                if self.use_compression and page_buffer[0] == 0x00 and page_buffer[1] == 0x00 and page_buffer[2] == 0xFF:
+                if (
+                    self.use_compression
+                    and page_buffer[0] == 0x00
+                    and page_buffer[1] == 0x00
+                    and page_buffer[2] == 0xFF
+                ):
                     # This is a blank page marker, fill with 0xFF
                     for i in range(page_total_size):
                         page_buffer[i] = 0xFF
@@ -811,7 +926,9 @@ class NANDFlasher:
                 # Send progress (percent and block index)
                 progress = int((block + 1) * 100 / total_blocks)
                 if self.binary_mode:
-                    payload = bytes([progress & 0xFF, (progress >> 8) & 0xFF]) + struct.pack('<I', block)
+                    payload = bytes([progress & 0xFF, (progress >> 8) & 0xFF]) + struct.pack(
+                        "<I", block
+                    )
                     self._send_frame(self.CMD_PROGRESS, payload)
                 else:
                     self.uart.write(f"PROGRESS:{progress}\n")
@@ -832,11 +949,11 @@ class NANDFlasher:
             self.uart.write("NAND_NOT_CONNECTED\n")
             return
         try:
-            if cmd == 'READ':
+            if cmd == "READ":
                 self.read_nand_operation()
-            elif cmd == 'WRITE':
+            elif cmd == "WRITE":
                 self.write_nand_operation()
-            elif cmd == 'ERASE':
+            elif cmd == "ERASE":
                 self.erase_nand_operation()
         except Exception:
             self.uart.write("OPERATION_FAILED\n")
@@ -904,10 +1021,10 @@ class NANDFlasher:
                 while True:
                     cmd = self.wait_for_command()
                     if cmd:
-                        if cmd.lower() == 'y':
+                        if cmd.lower() == "y":
                             self.current_nand = self.select_nand_manually()
                             break
-                        elif cmd.lower() == 'n':
+                        elif cmd.lower() == "n":
                             sys.exit()
                     if time.ticks_diff(time.ticks_ms(), start_wait) > timeout:
                         sys.exit()
@@ -920,13 +1037,13 @@ class NANDFlasher:
                 if not cmd:
                     continue
 
-                if cmd == 'STATUS':
+                if cmd == "STATUS":
                     self.send_status()
-                elif cmd in ['READ', 'WRITE', 'ERASE']:
+                elif cmd in ["READ", "WRITE", "ERASE"]:
                     self.handle_operation(cmd)
-                elif cmd == 'EXIT':
+                elif cmd == "EXIT":
                     sys.exit()
-                elif cmd == 'REDETECT':
+                elif cmd == "REDETECT":
                     # Break inner loop to re-detect
                     break
 
@@ -947,29 +1064,29 @@ class NANDFlasher:
         # after reading MAGIC, read header/payload/crc
         header = self._read_exact(5)
         if not header:
-            return None, b''
+            return None, b""
         cmd = header[0]
-        length = struct.unpack('<I', header[1:5])[0]
-        payload = self._read_exact(length) if length > 0 else b''
+        length = struct.unpack("<I", header[1:5])[0]
+        payload = self._read_exact(length) if length > 0 else b""
         crc_bytes = self._read_exact(4)
         # CRC is not strictly validated to keep code small; can be added
         return cmd, payload
 
     def _read_frame_blocking(self):
         # Find MAGIC
-        sync = b''
+        sync = b""
         while True:
             b1 = self._read_exact(1)
             if not b1:
-                return self.CMD_ERROR, b''
+                return self.CMD_ERROR, b""
             sync = (sync + b1)[-2:]
             if sync == self.MAGIC:
                 return self._read_frame_after_magic()
 
-    def _send_frame(self, cmd, payload=b''):
-        header = bytes([cmd]) + struct.pack('<I', len(payload))
+    def _send_frame(self, cmd, payload=b""):
+        header = bytes([cmd]) + struct.pack("<I", len(payload))
         crc = self._crc32(header + payload)
-        self.uart.write(self.MAGIC + header + payload + struct.pack('<I', crc))
+        self.uart.write(self.MAGIC + header + payload + struct.pack("<I", crc))
 
     def _crc32(self, data):
         # Simple CRC32 (same polynomial as host). MicroPython lacks zlib, so implement small version.
@@ -993,4 +1110,5 @@ if __name__ == "__main__":
         pass
     except Exception as e:
         import sys
+
         sys.print_exception(e)

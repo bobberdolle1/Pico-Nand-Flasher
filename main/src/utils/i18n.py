@@ -76,5 +76,6 @@ class I18n:
     def get_available_languages(self) -> list:
         return list(self.translations.keys())
 
+
 # Global singleton
 i18n = I18n()

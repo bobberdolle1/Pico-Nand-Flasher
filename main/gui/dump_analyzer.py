@@ -2,6 +2,7 @@
 Dump Analyzer for Pico NAND Flasher
 Provides tools for analyzing NAND flash dumps including hex view, string extraction, and statistics
 """
+
 import os
 import sys
 
@@ -84,11 +85,11 @@ class DumpAnalyzer(QMainWindow):
 
         # Menu bar
         menubar = self.menuBar()
-        file_menu = menubar.addMenu('Файл')
+        file_menu = menubar.addMenu("Файл")
 
-        open_action = file_menu.addAction('Открыть дамп')
+        open_action = file_menu.addAction("Открыть дамп")
         open_action.triggered.connect(self.open_dump)
-        open2_action = file_menu.addAction('Открыть второй дамп (для diff)')
+        open2_action = file_menu.addAction("Открыть второй дамп (для diff)")
         open2_action.triggered.connect(self.open_second_dump)
 
         # Status bar
@@ -206,7 +207,9 @@ class DumpAnalyzer(QMainWindow):
         self.bad_blocks_table = QTableWidget()
         self.bad_blocks_table.setColumnCount(1)
         self.bad_blocks_table.setHorizontalHeaderLabels(["Плохие блоки"])
-        self.bad_blocks_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.bad_blocks_table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
         bb_buttons = QVBoxLayout()
         self.export_bb_btn = QPushButton("Экспорт bad-block в CSV")
         self.export_bb_btn.clicked.connect(self.export_bad_blocks)
@@ -231,7 +234,9 @@ class DumpAnalyzer(QMainWindow):
         ecc_layout = QHBoxLayout()
         self.verify_ecc_btn = QPushButton("Проверка ECC")
         self.verify_ecc_btn.clicked.connect(self.verify_ecc)
-        self.legend_label = QLabel("Легенда: OOB> — зона OOB, ECC! — страница с ошибкой ECC, BB# — блок с bad-block")
+        self.legend_label = QLabel(
+            "Легенда: OOB> — зона OOB, ECC! — страница с ошибкой ECC, BB# — блок с bad-block"
+        )
         ecc_layout.addWidget(self.verify_ecc_btn)
         ecc_layout.addWidget(self.legend_label)
         layout.addLayout(ecc_layout)
@@ -247,18 +252,17 @@ class DumpAnalyzer(QMainWindow):
     def open_dump(self):
         """Open a dump file"""
         file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Открыть дамп",
-            "",
-            "Binary files (*.bin);;All files (*)"
+            self, "Открыть дамп", "", "Binary files (*.bin);;All files (*)"
         )
 
         if file_path:
             try:
-                with open(file_path, 'rb') as f:
+                with open(file_path, "rb") as f:
                     self.dump_data = f.read()
                 self.dump_path = file_path
-                self.status_bar.showMessage(f"Загружен дамп: {os.path.basename(file_path)}, размер: {len(self.dump_data)} байт")
+                self.status_bar.showMessage(
+                    f"Загружен дамп: {os.path.basename(file_path)}, размер: {len(self.dump_data)} байт"
+                )
 
                 # Refresh all views
                 self.refresh_hex_view()
@@ -273,10 +277,12 @@ class DumpAnalyzer(QMainWindow):
         if not file_path:
             return
         try:
-            with open(file_path, 'rb') as f:
+            with open(file_path, "rb") as f:
                 self.dump_data = f.read()
             self.dump_path = file_path
-            self.status_bar.showMessage(f"Загружен дамп: {os.path.basename(file_path)}, размер: {len(self.dump_data)} байт")
+            self.status_bar.showMessage(
+                f"Загружен дамп: {os.path.basename(file_path)}, размер: {len(self.dump_data)} байт"
+            )
             # Refresh all views
             self.refresh_hex_view()
             self.calculate_statistics()
@@ -288,17 +294,16 @@ class DumpAnalyzer(QMainWindow):
     def open_second_dump(self):
         """Open second dump for diff"""
         file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Открыть второй дамп",
-            "",
-            "Binary files (*.bin);;All files (*)"
+            self, "Открыть второй дамп", "", "Binary files (*.bin);;All files (*)"
         )
         if file_path:
             try:
-                with open(file_path, 'rb') as f:
+                with open(file_path, "rb") as f:
                     self.second_dump_data = f.read()
                 self.second_dump_path = file_path
-                self.status_bar.showMessage(f"Второй дамп: {os.path.basename(file_path)}, размер: {len(self.second_dump_data)} байт")
+                self.status_bar.showMessage(
+                    f"Второй дамп: {os.path.basename(file_path)}, размер: {len(self.second_dump_data)} байт"
+                )
                 if self.dump_data:
                     self.calculate_diff()
             except Exception as e:
@@ -329,15 +334,15 @@ class DumpAnalyzer(QMainWindow):
             self.hex_view.setPlainText("Неверный формат адреса или размера")
 
     def on_toggle_oob(self, state):
-        self.show_oob = (state == Qt.CheckState.Checked)
+        self.show_oob = state == Qt.CheckState.Checked
         self.refresh_hex_view()
 
     def on_toggle_badblocks(self, state):
-        self.show_badblocks = (state == Qt.CheckState.Checked)
+        self.show_badblocks = state == Qt.CheckState.Checked
         self.refresh_hex_view()
 
     def on_toggle_ecc(self, state):
-        self.show_ecc = (state == Qt.CheckState.Checked)
+        self.show_ecc = state == Qt.CheckState.Checked
         self.refresh_hex_view()
 
     def format_hex_dump(self, data, start_addr):
@@ -373,29 +378,31 @@ class DumpAnalyzer(QMainWindow):
             # Page border marker
             if self.page_size and self.spare_size:
                 page_total = self.page_size + self.spare_size
-                page_offset_global = (start_addr + i)
+                page_offset_global = start_addr + i
                 if (page_offset_global % page_total) == 0:
                     # Horizontal separator for a new page start
                     page_idx = page_offset_global // page_total
-                    result.append(f"========== PAGE {page_idx} (0x{page_idx * page_total:08X}) ==========")
+                    result.append(
+                        f"========== PAGE {page_idx} (0x{page_idx * page_total:08X}) =========="
+                    )
                     prefix_flags.append("|PAGE|")
             # OOB marker
             if self.show_oob and self.page_size and self.spare_size:
                 page_total = self.page_size + self.spare_size
                 page_offset = (start_addr + i) % page_total
-                in_oob = (page_offset >= self.page_size and page_offset < page_total)
+                in_oob = page_offset >= self.page_size and page_offset < page_total
                 if in_oob:
                     prefix_flags.append("OOB>")
             # ECC error marker by page
             if self.show_ecc and self.page_size and self.spare_size:
                 page_total = self.page_size + self.spare_size
-                page_idx = ((start_addr + i) // page_total)
+                page_idx = (start_addr + i) // page_total
                 if page_idx in self._ecc_error_pages:
                     prefix_flags.append("ECC!")
             # Bad-block overlay by page
             if self.show_badblocks and self._last_bad_blocks and self.page_size and self.spare_size:
                 page_total = self.page_size + self.spare_size
-                page_idx = ((start_addr + i) // page_total)
+                page_idx = (start_addr + i) // page_total
                 # Heuristic: 64 pages per block for 2K/4K pages, else 32
                 pages_per_block = 64 if self.page_size in (2048, 4096) else 32
                 block_idx = page_idx // pages_per_block
@@ -430,7 +437,7 @@ class DumpAnalyzer(QMainWindow):
             oob_start = page_start + self.page_size
             if oob_start < len(self.dump_data):
                 if self.dump_data[oob_start] != 0xFF:
-                    block_idx = p //  (64 if self.page_size in (2048, 4096) else 32)
+                    block_idx = p // (64 if self.page_size in (2048, 4096) else 32)
                     bad_blocks.add(block_idx)
         # Populate table
         self.bad_blocks_table.setRowCount(len(bad_blocks))
@@ -450,11 +457,13 @@ class DumpAnalyzer(QMainWindow):
         if not hasattr(self, "_last_bad_blocks") or not self._last_bad_blocks:
             QMessageBox.warning(self, "Предупреждение", "Сначала выполните сканирование bad-block")
             return
-        path, _ = QFileDialog.getSaveFileName(self, "Сохранить CSV", "bad_blocks.csv", "CSV files (*.csv)")
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Сохранить CSV", "bad_blocks.csv", "CSV files (*.csv)"
+        )
         if not path:
             return
         try:
-            with open(path, 'w', encoding='utf-8') as f:
+            with open(path, "w", encoding="utf-8") as f:
                 f.write("block\n")
                 for b in self._last_bad_blocks:
                     f.write(f"{b}\n")
@@ -481,7 +490,9 @@ class DumpAnalyzer(QMainWindow):
         lines.append("# Отчёт анализа дампа\n")
         lines.append(f"- Файл: `{os.path.basename(self.dump_path) if self.dump_path else ''}`\n")
         lines.append(f"- Размер: **{total_size}** байт ({total_size/1024/1024:.2f} МБ)\n")
-        lines.append(f"- Геометрия: страница {page_sz} байт, OOB {spare_sz} байт, страниц ~ {pages}\n")
+        lines.append(
+            f"- Геометрия: страница {page_sz} байт, OOB {spare_sz} байт, страниц ~ {pages}\n"
+        )
         if diff_info:
             lines.append(f"- Diff: {diff_info}\n")
         lines.append("\n## Плохие блоки\n")
@@ -495,7 +506,9 @@ class DumpAnalyzer(QMainWindow):
         lines.append("\n## ECC\n")
         if self._ecc_error_pages_detail:
             total_err_pages = len(self._ecc_error_pages_detail)
-            total_err_sectors = sum(len(sectors) for sectors in self._ecc_error_pages_detail.values())
+            total_err_sectors = sum(
+                len(sectors) for sectors in self._ecc_error_pages_detail.values()
+            )
             lines.append(f"Страниц с ошибками ECC: **{total_err_pages}**\n")
             lines.append(f"Секторов с ошибками ECC: **{total_err_sectors}**\n")
             lines.append("\nСписок страниц и индексов секторов с ошибками:\n")
@@ -508,11 +521,13 @@ class DumpAnalyzer(QMainWindow):
         lines.append("\n## Статистика\n")
         lines.append("```\n" + self.stats_text.toPlainText() + "\n```\n")
 
-        path, _ = QFileDialog.getSaveFileName(self, "Сохранить отчёт", "dump_report.md", "Markdown files (*.md)")
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Сохранить отчёт", "dump_report.md", "Markdown files (*.md)"
+        )
         if not path:
             return
         try:
-            with open(path, 'w', encoding='utf-8') as f:
+            with open(path, "w", encoding="utf-8") as f:
                 f.writelines(lines)
             QMessageBox.information(self, "Экспорт", f"Отчёт сохранён: {path}")
         except Exception as e:
@@ -536,14 +551,18 @@ class DumpAnalyzer(QMainWindow):
         error_pages = set()
         error_detail = {}
         # ECC parameters from config
-        scheme = str(config_manager.get('ecc_scheme', 'crc16'))
-        sector_size = int(config_manager.get('ecc_sector_size', 512))
-        bytes_per_sector = int(config_manager.get('ecc_bytes_per_sector', 2))
-        oob_offset = int(config_manager.get('ecc_oob_offset', 0))
+        scheme = str(config_manager.get("ecc_scheme", "crc16"))
+        sector_size = int(config_manager.get("ecc_sector_size", 512))
+        bytes_per_sector = int(config_manager.get("ecc_bytes_per_sector", 2))
+        oob_offset = int(config_manager.get("ecc_oob_offset", 0))
         for p in range(total_pages):
             start = p * page_total
-            data = self.dump_data[start:start+self.page_size]
-            oob = self.dump_data[start+self.page_size:start+page_total] if self.spare_size else b""
+            data = self.dump_data[start : start + self.page_size]
+            oob = (
+                self.dump_data[start + self.page_size : start + page_total]
+                if self.spare_size
+                else b""
+            )
             _, sectors_with_err = verify_and_correct(
                 data,
                 oob,
@@ -585,7 +604,9 @@ class DumpAnalyzer(QMainWindow):
         if not self.dump_data or not self.second_dump_data:
             return
         if len(self.dump_data) != len(self.second_dump_data):
-            self.status_bar.showMessage("Diff: размеры файлов различаются — сравнение по длине невозможно")
+            self.status_bar.showMessage(
+                "Diff: размеры файлов различаются — сравнение по длине невозможно"
+            )
             return
         diffs = 0
         for a, b in zip(self.dump_data, self.second_dump_data):
@@ -609,7 +630,11 @@ class DumpAnalyzer(QMainWindow):
         current_addr = -1
 
         for i, byte in enumerate(self.dump_data):
-            if 32 <= byte <= 126 or byte in [9, 10, 13]:  # Printable chars including tab, newline, carriage return
+            if 32 <= byte <= 126 or byte in [
+                9,
+                10,
+                13,
+            ]:  # Printable chars including tab, newline, carriage return
                 if not current_string:
                     current_addr = i
                 current_string += chr(byte)
@@ -645,7 +670,7 @@ class DumpAnalyzer(QMainWindow):
 
         # Find most and least common bytes
         most_common = max(enumerate(byte_counts), key=lambda x: x[1])
-        least_common = min(enumerate(byte_counts), key=lambda x: x[1] if x[1] > 0 else float('inf'))
+        least_common = min(enumerate(byte_counts), key=lambda x: x[1] if x[1] > 0 else float("inf"))
 
         # Calculate entropy
         entropy = 0
