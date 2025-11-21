@@ -2,8 +2,9 @@
 CLI interface for Pico NAND Flasher
 Provides command-line interface without GUI dependencies
 """
-from argparse import ArgumentParser
+
 import sys
+from argparse import ArgumentParser
 from pathlib import Path
 from typing import Optional
 
@@ -36,10 +37,12 @@ class CLIInterface:
         ports = list(serial.tools.list_ports.comports())
         for port in ports:
             # Look for Pico or common identifiers
-            if ("Pico" in port.description or
-                "Serial" in port.description or
-                "UART" in port.description or
-                "CDC" in port.description):
+            if (
+                "Pico" in port.description
+                or "Serial" in port.description
+                or "UART" in port.description
+                or "CDC" in port.description
+            ):
                 self.logger.info(f"Pico detected on {port.device}")
                 return port.device
 
@@ -98,7 +101,9 @@ class CLIInterface:
                 print(f"   Page size: {info['page_size']} bytes")
                 print(f"   Block size: {info['block_size']} pages")
                 print(f"   Total blocks: {info['blocks']}")
-                total_size = (info['blocks'] * info['block_size'] * info['page_size']) / (1024*1024)  # MB
+                total_size = (info["blocks"] * info["block_size"] * info["page_size"]) / (
+                    1024 * 1024
+                )  # MB
                 print(f"   Total size: ~{total_size:.2f} MB")
             return True
         else:
@@ -111,12 +116,13 @@ class CLIInterface:
 
         Args:
             output_file: Path to save the dump
-            
+
         Returns:
             True if successful, False otherwise
         """
+
         def progress_callback(progress: int):
-            print(f"\rRead progress: {progress}%", end='', flush=True)
+            print(f"\rRead progress: {progress}%", end="", flush=True)
 
         print(f"Reading NAND to {output_file}...")
         data = self.controller.read_nand(progress_callback=progress_callback)
@@ -124,7 +130,7 @@ class CLIInterface:
         if data:
             print(f"\nSaving {len(data)} bytes to {output_file}")
             try:
-                with open(output_file, 'wb') as f:
+                with open(output_file, "wb") as f:
                     f.write(data)
                 print(f"✅ NAND read completed successfully. Data saved to {output_file}")
                 return True
@@ -138,10 +144,10 @@ class CLIInterface:
     def write_operation(self, input_file: str) -> bool:
         """
         Perform write operation
-        
+
         Args:
             input_file: Path to file to write to NAND
-            
+
         Returns:
             True if successful, False otherwise
         """
@@ -150,7 +156,7 @@ class CLIInterface:
             return False
 
         try:
-            with open(input_file, 'rb') as f:
+            with open(input_file, "rb") as f:
                 data = f.read()
             print(f"Loaded {len(data)} bytes from {input_file}")
         except Exception as e:
@@ -159,12 +165,12 @@ class CLIInterface:
 
         # Confirm write operation
         response = input("⚠️  This will overwrite NAND contents. Continue? (y/N): ")
-        if response.lower() != 'y':
+        if response.lower() != "y":
             print("Write operation cancelled")
             return False
 
         def progress_callback(progress: int):
-            print(f"\rWrite progress: {progress}%", end='', flush=True)
+            print(f"\rWrite progress: {progress}%", end="", flush=True)
 
         print("Writing data to NAND...")
         success = self.controller.write_nand(data, progress_callback=progress_callback)
@@ -180,12 +186,12 @@ class CLIInterface:
         """Perform erase operation"""
         # Confirm erase operation
         response = input("⚠️  This will erase all data on NAND. Continue? (y/N): ")
-        if response.lower() != 'y':
+        if response.lower() != "y":
             print("Erase operation cancelled")
             return False
 
         def progress_callback(progress: int):
-            print(f"\rErase progress: {progress}%", end='', flush=True)
+            print(f"\rErase progress: {progress}%", end="", flush=True)
 
         print("Erasing NAND...")
         success = self.controller.erase_nand(progress_callback=progress_callback)
@@ -200,8 +206,8 @@ class CLIInterface:
     def run_cli(self, args):
         """Run CLI with parsed arguments"""
         # Setup logging based on verbosity
-        log_level = 'DEBUG' if args.verbose else 'INFO'
-        setup_logging(level=getattr(sys.modules['logging'], log_level))
+        log_level = "DEBUG" if args.verbose else "INFO"
+        setup_logging(level=getattr(sys.modules["logging"], log_level))
 
         # Connect to device
         if not self.connect_to_device(args.port):
@@ -215,13 +221,13 @@ class CLIInterface:
 
         # Perform requested operation
         success = False
-        if args.command == 'read':
+        if args.command == "read":
             success = self.read_operation(args.output)
-        elif args.command == 'write':
+        elif args.command == "write":
             success = self.write_operation(args.input)
-        elif args.command == 'erase':
+        elif args.command == "erase":
             success = self.erase_operation()
-        elif args.command == 'info':
+        elif args.command == "info":
             success = True  # Just detection was already done
 
         # Disconnect
@@ -231,33 +237,37 @@ class CLIInterface:
 
 def main():
     """Main CLI entry point"""
-    parser = ArgumentParser(description='Pico NAND Flasher - Command Line Interface')
-    parser.add_argument('--port', type=str, help='Serial port to connect to (e.g., COM3, /dev/ttyUSB0)')
-    parser.add_argument('--verbose', '-v', action='store_true', help='Enable verbose logging')
-    parser.add_argument('--force', action='store_true', help='Force operation even if NAND not detected')
+    parser = ArgumentParser(description="Pico NAND Flasher - Command Line Interface")
+    parser.add_argument(
+        "--port", type=str, help="Serial port to connect to (e.g., COM3, /dev/ttyUSB0)"
+    )
+    parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
+    parser.add_argument(
+        "--force", action="store_true", help="Force operation even if NAND not detected"
+    )
 
-    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Read command
-    read_parser = subparsers.add_parser('read', help='Read NAND content to file')
-    read_parser.add_argument('output', type=str, help='Output file path')
+    read_parser = subparsers.add_parser("read", help="Read NAND content to file")
+    read_parser.add_argument("output", type=str, help="Output file path")
 
     # Write command
-    write_parser = subparsers.add_parser('write', help='Write file to NAND')
-    write_parser.add_argument('input', type=str, help='Input file path')
+    write_parser = subparsers.add_parser("write", help="Write file to NAND")
+    write_parser.add_argument("input", type=str, help="Input file path")
 
     # Erase command
-    subparsers.add_parser('erase', help='Erase NAND content')
+    subparsers.add_parser("erase", help="Erase NAND content")
 
     # Info command
-    subparsers.add_parser('info', help='Show NAND information')
+    subparsers.add_parser("info", help="Show NAND information")
 
     # List command
-    subparsers.add_parser('list', help='List available serial ports')
+    subparsers.add_parser("list", help="List available serial ports")
 
     args = parser.parse_args()
 
-    if args.command == 'list':
+    if args.command == "list":
         cli = CLIInterface()
         cli.list_ports()
         return
