@@ -250,7 +250,7 @@ def main():
     erase_parser = subparsers.add_parser('erase', help='Erase NAND content')
 
     # Info command
-    info_parser = subparsers.add_parser('info', help='Show NAND information')
+    subparsers.add_parser('info', help='Show NAND information')
 
     # List command
     subparsers.add_parser('list', help='List available serial ports')
