@@ -9,7 +9,7 @@ class FakeSerialLegacy:
     Provides readline() returning a queued list of lines and captures writes.
     """
     def __init__(self, lines):
-        self._lines = [l if l.endswith("\n") else l + "\n" for l in lines]
+        self._lines = [line if line.endswith("\n") else line + "\n" for line in lines]
         self.writes = bytearray()
         self.is_open = True
         self._in_waiting = len(self._lines[0]) if self._lines else 0
