@@ -61,7 +61,7 @@ class ConfigManager:
     def load_config(self) -> bool:
         """
         Load configuration from file
-        
+
         Returns:
             True if configuration was loaded successfully, False otherwise
         """
