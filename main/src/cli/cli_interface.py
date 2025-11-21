@@ -247,7 +247,7 @@ def main():
     write_parser.add_argument('input', type=str, help='Input file path')
 
     # Erase command
-    erase_parser = subparsers.add_parser('erase', help='Erase NAND content')
+    subparsers.add_parser('erase', help='Erase NAND content')
 
     # Info command
     subparsers.add_parser('info', help='Show NAND information')
