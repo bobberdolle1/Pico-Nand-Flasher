@@ -42,7 +42,8 @@ def build_mixed_sequence(ctrl: NANDController, pages: int, page_len: int):
     for page in range(pages):
         payload = bytes([(page + i) % 251 for i in range(page_len)])
         page_crc = zlib.crc32(payload) & 0xFFFFFFFF
-        # Mixed order: sometimes PAGE_CRC -> PROGRESS -> DATA, sometimes PROGRESS -> DATA -> PAGE_CRC
+        # Mixed order: sometimes PAGE_CRC -> PROGRESS -> DATA, 
+        # sometimes PROGRESS -> DATA -> PAGE_CRC
         if page % 2 == 0:
             data += frame_pf(ctrl.CMD_PAGE_CRC, struct.pack("<II", page, page_crc))
             percent = int((page + 1) * 100 / pages)
@@ -67,7 +68,8 @@ def test_pf_read_mixed_frames(tmp_path, monkeypatch):
     monkeypatch.setattr(config_manager.settings, "use_binary_protocol", True, raising=False)
     ctrl = NANDController()
     ctrl._resume_path = tmp_path / "resume.json"
-    # Use small page geometry to keep payloads short and allow OOB stripping logic to be skipped here
+    # Use small page geometry to keep payloads short and allow 
+    # OOB stripping logic to be skipped here
     ctrl.current_nand_info = {"blocks": 1, "block_size": 2, "page_size": 64}
     ctrl.is_connected = True
 

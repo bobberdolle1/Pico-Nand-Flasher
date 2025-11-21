@@ -66,12 +66,14 @@ def test_write_resume_crc_validation(tmp_path, monkeypatch):
     # Execute write; due to CRC mismatch, it should restart from 0 and write 8192 bytes
     ok = ctrl.write_nand(data)
     assert ok is True
-    # In legacy mode, writes are raw chunks (no framing); verify total bytes written equals data length
+    # In legacy mode, writes are raw chunks (no framing); verify total bytes 
+    # written equals data length
     assert len(fake_ser.writes) == len(data)
 
 
 def test_read_resume_discard_bytes(tmp_path, monkeypatch):
-    # Note: Full framed binary test would require framing generator; here we test helper math for bytes-to-discard
+    # Note: Full framed binary test would require framing generator; 
+    # here we test helper math for bytes-to-discard
     monkeypatch.setattr(config_manager.settings, "use_binary_protocol", False, raising=False)
     ctrl = NANDController()
     ctrl._resume_path = tmp_path / "resume.json"

@@ -6,7 +6,7 @@ Handles application settings, defaults, and configuration persistence.
 import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -49,7 +49,7 @@ class AppSettings:
 class ConfigManager:
     """Configuration manager for handling persistent settings"""
 
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, config_path: str | None = None):
         """
         Initialize configuration manager
 

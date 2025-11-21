@@ -8,7 +8,6 @@ import threading
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import Tk, filedialog, messagebox
-from typing import Optional
 
 import serial
 import serial.tools.list_ports
@@ -368,7 +367,7 @@ class NANDFlasherGUI:
             self.dump_label.config(text=os.path.basename(file_path))
             self.logger.info(f"Selected dump file: {file_path}")
 
-    def save_dump(self) -> Optional[str]:
+    def save_dump(self) -> str | None:
         """Prompt to save dump file"""
         file_path = filedialog.asksaveasfilename(
             title=i18n.t("save_dump_title"),

@@ -1,6 +1,5 @@
 import json
 import os
-from typing import Dict
 
 
 class I18n:
@@ -11,7 +10,7 @@ class I18n:
 
     def __init__(self, default_lang: str = "en"):
         self.current_lang = default_lang
-        self.translations: Dict[str, Dict[str, str]] = {}
+        self.translations: dict[str, dict[str, str]] = {}
         self._load_defaults()
         self._load_external_resources()
 

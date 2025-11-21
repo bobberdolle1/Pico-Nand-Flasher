@@ -6,7 +6,6 @@ Provides command-line interface without GUI dependencies
 import sys
 from argparse import ArgumentParser
 from pathlib import Path
-from typing import Optional
 
 import serial.tools.list_ports
 
@@ -25,7 +24,7 @@ class CLIInterface:
         self.controller = NANDController()
         self.port = None
 
-    def auto_detect_port(self) -> Optional[str]:
+    def auto_detect_port(self) -> str | None:
         """
         Automatically detect the Pico COM port
 
@@ -60,7 +59,7 @@ class CLIInterface:
         for i, port in enumerate(ports):
             print(f"  {i+1}. {port.device} - {port.description}")
 
-    def connect_to_device(self, port: Optional[str] = None) -> bool:
+    def connect_to_device(self, port: str | None = None) -> bool:
         """
         Connect to the Pico device
 

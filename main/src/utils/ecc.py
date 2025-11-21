@@ -1,4 +1,3 @@
-from typing import List, Tuple
 
 
 def _crc16_ccitt(data: bytes, poly: int = 0x1021, init: int = 0xFFFF) -> int:
@@ -135,14 +134,14 @@ def verify_and_correct(
     sector_size: int = 512,
     bytes_per_sector: int = 2,
     oob_offset: int = 0,
-) -> Tuple[bytes, List[int]]:
+) -> tuple[bytes, list[int]]:
     """
     Verify data using a simple ECC rule: compare CRC16(data) with first 2 bytes of OOB (LE).
     This is a pragmatic verifier when OOB stores 2-byte checks; no correction is performed.
 
     Returns (data, error_markers) where error_markers is non-empty on mismatch.
     """
-    errors: List[int] = []
+    errors: list[int] = []
     if scheme == "none":
         return data, errors
     if scheme == "crc16":

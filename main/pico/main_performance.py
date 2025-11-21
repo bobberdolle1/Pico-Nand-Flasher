@@ -52,7 +52,8 @@ def nand_io_program():
 
 
 class NANDFlasher:
-    """Main class for NAND Flash operations on Raspberry Pi Pico with enhanced performance features"""
+    """Main class for NAND Flash operations on 
+    Raspberry Pi Pico with enhanced performance features"""
 
     def __init__(self):
         # Configuration
@@ -569,7 +570,7 @@ class NANDFlasher:
         """Read a single page of data and spare area"""
         try:
             page_size = nand_info["page_size"]
-            block_size = nand_info["block_size"]
+            nand_info["block_size"]
 
             # Step 1: Read command (00h)
             self.send_command(0x00)
@@ -612,7 +613,7 @@ class NANDFlasher:
         """Write a single page of data and spare area"""
         try:
             page_size = nand_info["page_size"]
-            block_size = nand_info["block_size"]
+            nand_info["block_size"]
 
             # Step 1: Serial Data Input command (80h)
             self.send_command(0x80)
@@ -975,7 +976,7 @@ class NANDFlasher:
                     if 0 <= index < len(names):
                         name = names[index]
                         return (name, self.supported_nand[name])
-                except:
+                except (ValueError, IndexError):
                     pass
 
     def main_loop(self):
@@ -1068,7 +1069,7 @@ class NANDFlasher:
         cmd = header[0]
         length = struct.unpack("<I", header[1:5])[0]
         payload = self._read_exact(length) if length > 0 else b""
-        crc_bytes = self._read_exact(4)
+        self._read_exact(4)
         # CRC is not strictly validated to keep code small; can be added
         return cmd, payload
 
@@ -1089,7 +1090,8 @@ class NANDFlasher:
         self.uart.write(self.MAGIC + header + payload + struct.pack("<I", crc))
 
     def _crc32(self, data):
-        # Simple CRC32 (same polynomial as host). MicroPython lacks zlib, so implement small version.
+        # Simple CRC32 (same polynomial as host). MicroPython lacks zlib, 
+        # so implement small version.
         crc = 0xFFFFFFFF
         for b in data:
             crc ^= b

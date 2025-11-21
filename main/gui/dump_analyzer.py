@@ -433,7 +433,7 @@ class DumpAnalyzer(QMainWindow):
         page_total = self.page_size + self.spare_size
         total_pages = len(self.dump_data) // page_total if page_total > 0 else 0
         bad_blocks = set()
-        # Простейшая эвристика: если в первом байте OOB страницы 
+        # Простейшая эвристика: если в первом байте OOB страницы
         # значение не 0xFF, помечать блок как bad
         for p in range(total_pages):
             page_start = p * page_total
