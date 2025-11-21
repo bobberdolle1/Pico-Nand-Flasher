@@ -1,0 +1,25 @@
+[tool.black]
+target-version = ["py38"]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+select = [
+  "E", "F", "I",  # pyflakes/pycodestyle/imports
+  "UP",              # pyupgrade
+  "W",               # warnings
+]
+ignore = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+
+[tool.mypy]
+python_version = "3.8"
+ignore_missing_imports = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+warn_unused_configs = true
+strict_optional = true
+no_implicit_optional = true

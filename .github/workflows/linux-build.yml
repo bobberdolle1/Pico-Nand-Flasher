@@ -1,0 +1,37 @@
+name: Build Linux App
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxcb-xinerama0 libxcb-cursor0
+          python -m pip install --upgrade pip
+          pip install -r main/requirements.txt
+          pip install pyinstaller==6.10.0
+
+      - name: Build with PyInstaller (onefolder)
+        run: |
+          pyinstaller main/packaging/piconand.spec --noconfirm
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PicoNANDFlasher-linux
+          path: dist/PicoNANDFlasher/**
