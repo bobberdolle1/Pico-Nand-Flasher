@@ -2,7 +2,6 @@
 Pico NAND Flasher - Main entry point
 Handles CLI and GUI mode selection
 """
-import argparse
 import sys
 
 from .cli.cli_interface import main as cli_main
