@@ -77,7 +77,6 @@ def test_oob_stripping(tmp_path, monkeypatch):
     ctrl._resume_path = tmp_path / "resume.json"
     # Tiny geometry to make test light-weight
     page_size = 4
-    spare_size = 2
     ctrl.current_nand_info = {"blocks": 1, "block_size": 2, "page_size": page_size}
     ctrl.is_connected = True
 
