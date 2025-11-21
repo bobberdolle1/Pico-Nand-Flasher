@@ -87,7 +87,7 @@ class ConfigManager:
     def save_config(self) -> bool:
         """
         Save current configuration to file
-        
+
         Returns:
             True if configuration was saved successfully, False otherwise
         """
