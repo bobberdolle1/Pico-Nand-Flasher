@@ -400,8 +400,9 @@ class NANDFlasher:
         if not self.use_compression:
             return data
 
-        # Simple RLE compression
-        if len(data) < 10:  # Don't compress small chunks
+        # Simple RLE compression - don't compress very small chunks
+        # since they're unlikely to have runs of 4+ identical bytes
+        if len(data) < 4:  # Can't compress anything smaller than 4 bytes meaningfully
             return data
 
         compressed = bytearray()
