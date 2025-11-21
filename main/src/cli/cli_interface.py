@@ -63,7 +63,7 @@ class CLIInterface:
 
         Args:
             port: Port to connect to. If None, auto-detect
-            
+
         Returns:
             True if connection successful, False otherwise
         """
