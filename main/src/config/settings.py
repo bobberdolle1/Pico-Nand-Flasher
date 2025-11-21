@@ -109,7 +109,7 @@ class ConfigManager:
         Args:
             key: Configuration key
             default: Default value if key doesn't exist
-            
+
         Returns:
             Configuration value or default
         """
