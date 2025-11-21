@@ -108,7 +108,7 @@ class CLIInterface:
     def read_operation(self, output_file: str) -> bool:
         """
         Perform read operation
-        
+
         Args:
             output_file: Path to save the dump
             
