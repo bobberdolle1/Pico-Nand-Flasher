@@ -253,7 +253,7 @@ def main():
     info_parser = subparsers.add_parser('info', help='Show NAND information')
 
     # List command
-    list_parser = subparsers.add_parser('list', help='List available serial ports')
+    subparsers.add_parser('list', help='List available serial ports')
 
     args = parser.parse_args()
 
