@@ -27,7 +27,7 @@ class CLIInterface:
     def auto_detect_port(self) -> Optional[str]:
         """
         Automatically detect the Pico COM port
-        
+
         Returns:
             Port name if found, None otherwise
         """
