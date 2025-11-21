@@ -2,7 +2,7 @@
 CLI interface for Pico NAND Flasher
 Provides command-line interface without GUI dependencies
 """
-import argparse
+from argparse import ArgumentParser
 import sys
 from pathlib import Path
 from typing import Optional
@@ -231,7 +231,7 @@ class CLIInterface:
 
 def main():
     """Main CLI entry point"""
-    parser = argparse.ArgumentParser(description='Pico NAND Flasher - Command Line Interface')
+    parser = ArgumentParser(description='Pico NAND Flasher - Command Line Interface')
     parser.add_argument('--port', type=str, help='Serial port to connect to (e.g., COM3, /dev/ttyUSB0)')
     parser.add_argument('--verbose', '-v', action='store_true', help='Enable verbose logging')
     parser.add_argument('--force', action='store_true', help='Force operation even if NAND not detected')
