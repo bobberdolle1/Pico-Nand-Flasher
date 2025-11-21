@@ -1,7 +1,9 @@
 import struct
 import zlib
-from src.hardware.nand_controller import NANDController
+
 from src.config.settings import config_manager
+from src.hardware.nand_controller import NANDController
+
 
 class FakeSerialBinary:
     def __init__(self, data_bytes: bytes):
@@ -56,7 +58,6 @@ def test_read_resume_crc_mismatch_starts_from_beginning(tmp_path, monkeypatch):
     ctrl.current_nand_info = {"blocks": 1, "block_size": 1, "page_size": 2048}
     ctrl.is_connected = True
     # Prepare resume state claiming last_page=1 with wrong crc
-    from json import dump
     ctrl._save_resume_state({"operation": "READ", "last_page": 1, "page_crc32": 0xDEADBEEF})
     # Build two pages of 100 bytes each (not aligning to page_total to skip OOB stripping branch)
     seq = build_read_sequence(ctrl, pages=2, page_len=100)

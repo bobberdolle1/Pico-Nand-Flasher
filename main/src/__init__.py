@@ -2,8 +2,9 @@
 Pico NAND Flasher - Main entry point
 Handles CLI and GUI mode selection
 """
-import sys
 import argparse
+import sys
+
 from .cli.cli_interface import main as cli_main
 from .gui.gui_interface import main as gui_main
 
@@ -19,7 +20,7 @@ def main():
         elif sys.argv[1] in ['--cli', '--command-line']:
             cli_main()
             return
-    
+
     # Default to GUI mode if no specific CLI arguments
     try:
         gui_main()

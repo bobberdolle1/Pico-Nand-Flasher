@@ -1,18 +1,18 @@
 import json
 import os
-from typing import Dict, Any
+
 
 class I18n:
     """
     Internationalization class for NAND Flasher
     Supports Russian and English languages
     """
-    
+
     def __init__(self, default_lang: str = 'en'):
         self.current_lang = default_lang
         self.translations = {}
         self.load_translations()
-    
+
     def load_translations(self):
         """Load translation files for all supported languages"""
         # Default English translations
@@ -169,7 +169,7 @@ class I18n:
                 "   - Error code 0xDEAD: Reconnect chip\n"
             )
         }
-        
+
         # Russian translations
         self.translations['ru'] = {
             'title': 'NAND Flasher',
@@ -332,7 +332,7 @@ class I18n:
                 path = os.path.join(base_dir, filename)
                 if os.path.exists(path):
                     try:
-                        with open(path, 'r', encoding='utf-8') as f:
+                        with open(path, encoding='utf-8') as f:
                             data = json.load(f)
                             if isinstance(data, dict):
                                 self.translations.setdefault(code, {})
@@ -346,29 +346,29 @@ class I18n:
         except Exception:
             # If anything goes wrong, silently keep built-in translations
             pass
-    
+
     def set_language(self, lang: str):
         """Set the current language"""
         if lang in self.translations:
             self.current_lang = lang
-    
+
     def t(self, key: str) -> str:
         """Get translated text for the current language"""
         if self.current_lang in self.translations:
             if key in self.translations[self.current_lang]:
                 return self.translations[self.current_lang][key]
-        
+
         # Fallback to English if translation not found
         if key in self.translations['en']:
             return self.translations['en'][key]
-        
+
         # Return the key itself if no translation found
         return key
-    
+
     def get_available_languages(self) -> list:
         """Get list of available languages"""
         return list(self.translations.keys())
-    
+
     def get_language_name(self, lang_code: str) -> str:
         """Get display name for language code"""
         names = {

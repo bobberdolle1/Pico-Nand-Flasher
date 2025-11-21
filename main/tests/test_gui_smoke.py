@@ -1,5 +1,6 @@
 import pytest
 
+
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_gui_smoke(qtbot):
     # Lazy import to ensure PyQt6 is available

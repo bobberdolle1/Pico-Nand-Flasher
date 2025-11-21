@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import List, Tuple
 
 
 def _crc16_ccitt(data: bytes, poly: int = 0x1021, init: int = 0xFFFF) -> int:

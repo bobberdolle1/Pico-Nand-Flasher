@@ -3,25 +3,41 @@ Pico NAND Flasher - Modern GUI with PyQt6
 Computer-side GUI for controlling the Raspberry Pi Pico NAND Flasher
 with enhanced performance and reliability features.
 """
-import sys
 import os
+import sys
 import time
+
 import serial
 import serial.tools.list_ports
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-                            QPushButton, QLabel, QProgressBar, QGroupBox, QFileDialog,
-                            QMessageBox, QComboBox, QCheckBox, QTextEdit, QTabWidget)
-from PyQt6.QtCore import QThread, pyqtSignal, QTimer, Qt, QSettings
-from PyQt6.QtGui import QFont, QIcon, QAction
+from PyQt6.QtCore import QSettings, Qt, QThread, QTimer, pyqtSignal
+from PyQt6.QtGui import QAction, QFont, QIcon
+from PyQt6.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QFileDialog,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QMessageBox,
+    QProgressBar,
+    QPushButton,
+    QTabWidget,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
+
 
 class NANDFlasherGUI(QMainWindow):
     """Modern GUI class for NAND Flasher operations with PyQt6"""
-    
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("🚀 Pico NAND Flasher (Modern)")
         self.setGeometry(100, 100, 800, 600)
-        
+
         # Global settings
         self.LANG = "RU"
         self.COM_PORT = None
@@ -40,12 +56,12 @@ class NANDFlasherGUI(QMainWindow):
         self.nand_info = {"status": "❌ NAND не подключен", "model": ""}
         self.manual_select_mode = False
         self.supported_nand_models = []
-        
+
         # Performance settings
         self.use_compression = True
         self.skip_blank_pages = True
         self.last_resume_block = 0
-        
+
         # Localization
         self.LANG_TEXT = {
             "RU": {
@@ -159,20 +175,20 @@ class NANDFlasherGUI(QMainWindow):
                 "operation_log": "Operation Log: "
             }
         }
-        
+
         # Settings storage (org/app names affect platform-specific storage locations)
         self.settings = QSettings("PicoNAND", "FlasherGUI")
 
         self.init_ui()
         self.setup_connections()
         self.load_settings()
-        
+
     def init_ui(self):
         """Initialize the user interface"""
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
-        
+
         # Toolbar (professional quick actions)
         self.toolbar = self.addToolBar("Main")
         self.action_refresh = QAction("🔄", self)
@@ -191,31 +207,31 @@ class NANDFlasherGUI(QMainWindow):
         self.action_about.setToolTip("About")
         for act in [self.action_refresh, self.action_connect, self.action_disconnect, self.action_read, self.action_write, self.action_erase, self.action_about]:
             self.toolbar.addAction(act)
-        
+
         # Create tabs
         self.tabs = QTabWidget()
-        
+
         # Main tab
         self.main_tab = QWidget()
         self.setup_main_tab()
-        
+
         # Log tab
         self.log_tab = QWidget()
         self.setup_log_tab()
-        
+
         # Settings tab
         self.settings_tab = QWidget()
         self.setup_settings_tab()
-        
+
         # Add tabs with correct titles
         self._apply_language_to_tabs()
-        
+
         main_layout.addWidget(self.tabs)
-        
+
         # Status bar
         self.status_bar = self.statusBar()
         self.status_bar.showMessage(self.LANG_TEXT[self.LANG]["nand_status"] + self.nand_info["status"])
-        
+
         # Timer for checking NAND status
         self.status_timer = QTimer()
         self.status_timer.timeout.connect(self.check_nand_status)
@@ -234,7 +250,7 @@ class NANDFlasherGUI(QMainWindow):
             else:
                 # No asset found: generate a simple icon dynamically
                 try:
-                    from PyQt6.QtGui import QPixmap, QPainter, QColor
+                    from PyQt6.QtGui import QColor, QPainter, QPixmap
                     pm = QPixmap(256, 256)
                     pm.fill(QColor("#1e1e1e"))
                     p = QPainter(pm)
@@ -261,141 +277,141 @@ class NANDFlasherGUI(QMainWindow):
         self.settings.setValue("write_with_oob", 1 if self.write_with_oob else 0)
         # Restore window geometry/position
         self.restore_window_state()
-        
+
     def setup_main_tab(self):
         """Setup the main tab"""
         layout = QVBoxLayout(self.main_tab)
-        
+
         # Connection group
         conn_group = QGroupBox("🔌 Подключение" if self.LANG == "RU" else "🔌 Connection")
         conn_layout = QHBoxLayout(conn_group)
-        
+
         self.com_ports_combo = QComboBox()
         self.refresh_ports_button = QPushButton(self.LANG_TEXT[self.LANG]["refresh_button"])
         self.connect_button = QPushButton(self.LANG_TEXT[self.LANG]["connect_button"])
         self.disconnect_button = QPushButton(self.LANG_TEXT[self.LANG]["disconnect_button"])
         self.disconnect_button.setEnabled(False)
-        
+
         conn_layout.addWidget(QLabel("COM Порт:" if self.LANG == "RU" else "COM Port:"))
         conn_layout.addWidget(self.com_ports_combo)
         conn_layout.addWidget(self.refresh_ports_button)
         conn_layout.addWidget(self.connect_button)
         conn_layout.addWidget(self.disconnect_button)
-        
+
         layout.addWidget(conn_group)
-        
+
         # NAND Info group
         nand_group = QGroupBox("📝 Информация о NAND" if self.LANG == "RU" else "📝 NAND Info")
         nand_layout = QVBoxLayout(nand_group)
-        
+
         self.nand_status_label = QLabel(self.nand_info["status"])
         self.nand_model_label = QLabel(self.nand_info["model"])
-        
+
         nand_layout.addWidget(self.nand_status_label)
         nand_layout.addWidget(self.nand_model_label)
-        
+
         layout.addWidget(nand_group)
-        
+
         # Operation group
         op_group = QGroupBox("⚙️ Операции" if self.LANG == "RU" else "⚙️ Operations")
         op_layout = QVBoxLayout(op_group)
-        
+
         self.read_button = QPushButton(self.LANG_TEXT[self.LANG]["read_button"])
         self.write_button = QPushButton(self.LANG_TEXT[self.LANG]["write_button"])
         self.erase_button = QPushButton(self.LANG_TEXT[self.LANG]["erase_button"])
-        
+
         op_layout.addWidget(self.read_button)
         op_layout.addWidget(self.write_button)
         op_layout.addWidget(self.erase_button)
-        
+
         layout.addWidget(op_group)
-        
+
         # Progress group
         progress_group = QGroupBox("📊 Прогресс" if self.LANG == "RU" else "📊 Progress")
         progress_layout = QVBoxLayout(progress_group)
-        
+
         self.progress_bar = QProgressBar()
         self.progress_label = QLabel("0%")
-        
+
         progress_layout.addWidget(self.progress_bar)
         progress_layout.addWidget(self.progress_label)
-        
+
         layout.addWidget(progress_group)
-        
+
         # Control group
         control_group = QGroupBox(self.LANG_TEXT[self.LANG]["operation_control"])
         control_layout = QHBoxLayout(control_group)
-        
+
         self.pause_button = QPushButton(self.LANG_TEXT[self.LANG]["pause_button"])
         self.resume_button = QPushButton(self.LANG_TEXT[self.LANG]["resume_button"])
         self.cancel_button = QPushButton(self.LANG_TEXT[self.LANG]["cancel_button"])
-        
+
         self.pause_button.setEnabled(False)
         self.resume_button.setEnabled(False)
         self.cancel_button.setEnabled(False)
-        
+
         control_layout.addWidget(self.pause_button)
         control_layout.addWidget(self.resume_button)
         control_layout.addWidget(self.cancel_button)
-        
+
         layout.addWidget(control_group)
-        
+
         # Dump selection
         dump_group = QGroupBox("💾 Выбор дампа" if self.LANG == "RU" else "💾 Dump selection")
         dump_layout = QHBoxLayout(dump_group)
-        
+
         self.dump_path_label = QLabel(self.LANG_TEXT[self.LANG]["no_dump"])
         self.load_dump_button = QPushButton(self.LANG_TEXT[self.LANG]["load_dump_button"])
         self.save_dump_button = QPushButton(self.LANG_TEXT[self.LANG]["save_dump_button"])
-        
+
         dump_layout.addWidget(self.dump_path_label)
         dump_layout.addWidget(self.load_dump_button)
         dump_layout.addWidget(self.save_dump_button)
-        
+
         layout.addWidget(dump_group)
-        
+
     def setup_log_tab(self):
         """Setup the log tab"""
         layout = QVBoxLayout(self.log_tab)
-        
+
         self.log_text = QTextEdit()
         self.log_text.setReadOnly(True)
-        
+
         layout.addWidget(self.log_text)
-        
+
     def setup_settings_tab(self):
         """Setup the settings tab"""
         layout = QVBoxLayout(self.settings_tab)
-        
+
         # Performance settings
         perf_group = QGroupBox(self.LANG_TEXT[self.LANG]["settings_title"])
         perf_layout = QVBoxLayout(perf_group)
-        
+
         self.compression_checkbox = QCheckBox(self.LANG_TEXT[self.LANG]["compression_setting"])
         self.compression_checkbox.setChecked(self.use_compression)
-        
+
         self.blank_skip_checkbox = QCheckBox(self.LANG_TEXT[self.LANG]["blank_skip_setting"])
         self.blank_skip_checkbox.setChecked(self.skip_blank_pages)
         # Write OOB option
         self.write_oob_checkbox = QCheckBox("Записывать OOB (spare)" if self.LANG == "RU" else "Write OOB (spare)")
         self.write_oob_checkbox.setChecked(self.write_with_oob)
-        
+
         perf_layout.addWidget(self.compression_checkbox)
         perf_layout.addWidget(self.blank_skip_checkbox)
         perf_layout.addWidget(self.write_oob_checkbox)
-        
+
         layout.addWidget(perf_group)
-        
+
         # Power settings
         power_group = QGroupBox("⚡ Настройки питания" if self.LANG == "RU" else "⚡ Power settings")
         power_layout = QVBoxLayout(power_group)
-        
+
         self.power_check_button = QPushButton(self.LANG_TEXT[self.LANG]["power_check"])
         self.power_status_label = QLabel("Неизвестно")
-        
+
         power_layout.addWidget(self.power_check_button)
         power_layout.addWidget(self.power_status_label)
-        
+
         layout.addWidget(power_group)
 
         # Language switch
@@ -420,7 +436,7 @@ class NANDFlasherGUI(QMainWindow):
         theme_layout.addWidget(self.theme_combo)
         theme_layout.addStretch()
         layout.addWidget(theme_group)
-        
+
     def setup_connections(self):
         """Setup signal connections"""
         self.connect_button.clicked.connect(self.connect_pico)
@@ -434,28 +450,28 @@ class NANDFlasherGUI(QMainWindow):
         self.action_write.triggered.connect(self.write_nand)
         self.action_erase.triggered.connect(self.erase_nand)
         self.action_about.triggered.connect(self.show_about)
-        
+
         self.read_button.clicked.connect(self.read_nand)
         self.write_button.clicked.connect(self.write_nand)
         self.erase_button.clicked.connect(self.erase_nand)
-        
+
         self.pause_button.clicked.connect(self.on_pause_clicked)
         self.resume_button.clicked.connect(self.on_resume_clicked)
         self.cancel_button.clicked.connect(self.on_cancel_clicked)
-        
+
         self.load_dump_button.clicked.connect(self.select_dump)
         self.save_dump_button.clicked.connect(self.save_dump)
-        
+
         self.compression_checkbox.stateChanged.connect(self.toggle_compression)
         self.blank_skip_checkbox.stateChanged.connect(self.toggle_blank_skip)
         self.power_check_button.clicked.connect(self.check_power_supply)
         self.lang_toggle_button.clicked.connect(self.toggle_language)
         self.theme_combo.currentTextChanged.connect(self.on_theme_changed)
         self.write_oob_checkbox.stateChanged.connect(self.on_write_oob_changed)
-        
+
         # Populate COM ports
         self.refresh_com_ports()
-        
+
     def refresh_com_ports(self):
         """Refresh available COM ports"""
         self.com_ports_combo.clear()
@@ -465,48 +481,48 @@ class NANDFlasherGUI(QMainWindow):
         last_port = self.settings.value("last_com_port", "")
         if last_port and last_port in ports:
             self.com_ports_combo.setCurrentText(last_port)
-        
+
         # Try to auto-select Pico if available
         for port in ports:
             if "Pico" in port or "Serial" in port or "UART" in port:
                 self.com_ports_combo.setCurrentText(port)
                 break
-    
+
     def log_message(self, message):
         """Add message to log"""
         timestamp = time.strftime("%H:%M:%S")
         self.log_text.append(f"[{timestamp}] {message}")
-        
+
     def connect_pico(self):
         """Connect to Pico"""
         port = self.com_ports_combo.currentText()
         if not port:
             QMessageBox.warning(self, "Ошибка", self.LANG_TEXT[self.LANG]["com_not_found"])
             return
-            
+
         try:
             self.ser = serial.Serial(port, self.BAUDRATE, timeout=1)
             self.COM_PORT = port
             # Persist selected port
             self.settings.setValue("last_com_port", port)
             self.log_message(f"{self.LANG_TEXT[self.LANG]['com_found']}{port}")
-            
+
             self.connect_button.setEnabled(False)
             self.disconnect_button.setEnabled(True)
             self.status_bar.showMessage(f"{self.LANG_TEXT[self.LANG]['com_found']}{port}")
-            
+
             # Start checking NAND status
             self.check_nand_status()
-            
+
         except Exception as e:
             QMessageBox.critical(self, "Ошибка подключения", f"Ошибка: {str(e)}")
             self.log_message(f"Ошибка подключения: {str(e)}")
-    
+
     def disconnect_pico(self):
         """Disconnect from Pico"""
         if self.ser and self.ser.is_open:
             self.ser.close()
-            
+
         self.ser = None
         self.COM_PORT = None
         self.connect_button.setEnabled(True)
@@ -515,23 +531,23 @@ class NANDFlasherGUI(QMainWindow):
         self.nand_model_label.setText("")
         self.status_bar.showMessage("Отключено")
         self.log_message("Отключено от Pico")
-    
+
     def check_nand_status(self):
         """Check the status of the connected NAND chip"""
         if not self.ser or not self.ser.is_open:
             return
-            
+
         try:
             # Clear buffer before sending request
             self.ser.reset_input_buffer()
             self.ser.write(b'STATUS\n')
-            
+
             start_time = time.time()
             timeout = 5  # 5 second timeout
             while time.time() - start_time < timeout:
                 if self.ser.in_waiting > 0:
                     response = self.ser.readline().decode('utf-8', errors='ignore').strip()
-                    
+
                     if response.startswith("MODEL:"):
                         model_name = response.split(":", 1)[1]
                         self.nand_info = {"status": "✅ NAND подключен", "model": model_name}
@@ -552,117 +568,117 @@ class NANDFlasherGUI(QMainWindow):
                         self.write_button.setEnabled(False)
                         self.erase_button.setEnabled(False)
                         return
-                        
+
                 time.sleep(0.01)  # Small pause in wait loop
-            
+
         except Exception as e:
             self.log_message(f"Ошибка проверки NAND: {str(e)}")
-    
+
     def read_nand(self):
         """Start reading NAND operation"""
         if not self.ser or not self.ser.is_open:
             QMessageBox.warning(self, "Ошибка", self.LANG_TEXT[self.LANG]["operation_not_possible"])
             return
-            
+
         # Ask for dump file location
         dump_path, _ = QFileDialog.getSaveFileName(
-            self, 
-            "Сохранить дамп как", 
-            "", 
+            self,
+            "Сохранить дамп как",
+            "",
             "Binary files (*.bin);;All files (*)"
         )
-        
+
         if not dump_path:
             return
-            
+
         self.selected_dump = dump_path
         self.dump_path_label.setText(f"{self.LANG_TEXT[self.LANG]['selected_dump']}{dump_path}")
-        
+
         # Ask for confirmation
         reply = QMessageBox.question(
-            self, 
-            "Подтверждение", 
+            self,
+            "Подтверждение",
             self.LANG_TEXT[self.LANG]["warning"],
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
-        
+
         if reply == QMessageBox.StandardButton.No:
             self.log_message(self.LANG_TEXT[self.LANG]["operation_cancelled"])
             return
-            
+
         # Start operation
         self.start_operation("READ")
-    
+
     def write_nand(self):
         """Start writing NAND operation"""
         if not self.ser or not self.ser.is_open:
             QMessageBox.warning(self, "Ошибка", self.LANG_TEXT[self.LANG]["operation_not_possible"])
             return
-            
+
         if not self.selected_dump:
             QMessageBox.warning(self, "Ошибка", self.LANG_TEXT[self.LANG]["no_dump"])
             return
-            
+
         # Ask for confirmation
         reply = QMessageBox.question(
-            self, 
-            "Подтверждение", 
+            self,
+            "Подтверждение",
             self.LANG_TEXT[self.LANG]["warning"],
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
-        
+
         if reply == QMessageBox.StandardButton.No:
             self.log_message(self.LANG_TEXT[self.LANG]["operation_cancelled"])
             return
-            
+
         # Start operation, choose protocol based on OOB option
         op = "WRITE" if self.write_with_oob else "WRITE_NO_OOB"
         self.start_operation(op)
-    
+
     def erase_nand(self):
         """Start erasing NAND operation"""
         if not self.ser or not self.ser.is_open:
             QMessageBox.warning(self, "Ошибка", self.LANG_TEXT[self.LANG]["operation_not_possible"])
             return
-            
+
         # Ask for confirmation
         reply = QMessageBox.question(
-            self, 
-            "Подтверждение", 
+            self,
+            "Подтверждение",
             self.LANG_TEXT[self.LANG]["warning"],
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
-        
+
         if reply == QMessageBox.StandardButton.No:
             self.log_message(self.LANG_TEXT[self.LANG]["operation_cancelled"])
             return
-            
+
         # Start operation
         self.start_operation("ERASE")
-    
+
     def start_operation(self, operation):
         """Start the specified operation"""
         self.operation_running = True
         self.operation_type = operation
-        
+
         # Enable control buttons
         self.pause_button.setEnabled(True)
         self.cancel_button.setEnabled(True)
-        
+
         # Disable operation buttons
         self.read_button.setEnabled(False)
         self.write_button.setEnabled(False)
         self.erase_button.setEnabled(False)
-        
+
         # Reset progress
         self.progress_bar.setValue(0)
         self.progress_label.setText("0%")
-        
+
         self.log_message(f"Начало операции: {operation}")
-        
+
         # Send command to Pico
-        self.ser.write(f'{operation}\n'.encode('utf-8'))
-        
+        self.ser.write(f'{operation}\n'.encode())
+
         # Start monitoring thread (pass dump path for all operations)
         dump_path = self.selected_dump
         self.operation_thread = OperationThread(self.ser, operation, dump_path=dump_path)
@@ -671,35 +687,35 @@ class NANDFlasherGUI(QMainWindow):
         self.operation_thread.power_warning.connect(self.handle_power_warning)
         self.operation_thread.finished.connect(self.operation_finished)
         self.operation_thread.start()
-    
+
     def update_progress(self, progress):
         """Update progress bar"""
         self.progress_bar.setValue(progress)
         self.progress_label.setText(f"{progress}%")
-    
+
     def update_status(self, status):
         """Update status"""
         self.log_message(status)
-    
+
     def handle_power_warning(self, warning):
         """Handle power supply warning"""
         self.log_message(f"{self.LANG_TEXT[self.LANG]['power_warning']}{warning}")
         QMessageBox.warning(self, "Предупреждение о питании", f"{self.LANG_TEXT[self.LANG]['power_warning']}{warning}")
-    
+
     def operation_finished(self, success):
         """Handle operation completion"""
         self.operation_running = False
-        
+
         # Disable control buttons
         self.pause_button.setEnabled(False)
         self.resume_button.setEnabled(False)
         self.cancel_button.setEnabled(False)
-        
+
         # Enable operation buttons
         self.read_button.setEnabled(True)
         self.write_button.setEnabled(True)
         self.erase_button.setEnabled(True)
-        
+
         if success:
             self.log_message("Операция завершена успешно")
             QMessageBox.information(self, "Успех", "Операция завершена успешно")
@@ -726,15 +742,15 @@ class NANDFlasherGUI(QMainWindow):
         else:
             self.log_message("Операция не удалась")
             QMessageBox.critical(self, "Ошибка", "Операция не удалась")
-    
+
     def show_about(self):
         text = (
             "<b>Pico NAND Flasher</b><br>"
-            "Современный GUI для чтения/записи/стирания NAND через Raspberry Pi Pico." 
+            "Современный GUI для чтения/записи/стирания NAND через Raspberry Pi Pico."
             "<br>Поддержка тем, локализации RU/EN, паузы/отмены операции, и анализатора дампов."
         )
         QMessageBox.about(self, "About", text)
-    
+
     def on_pause_clicked(self):
         """Pause the current operation"""
         self.is_paused = True
@@ -746,7 +762,7 @@ class NANDFlasherGUI(QMainWindow):
         self.log_message("Операция приостановлена")
         self.pause_button.setEnabled(False)
         self.resume_button.setEnabled(True)
-    
+
     def on_resume_clicked(self):
         """Resume the paused operation"""
         self.is_paused = False
@@ -758,21 +774,21 @@ class NANDFlasherGUI(QMainWindow):
         self.log_message("Операция возобновлена")
         self.pause_button.setEnabled(True)
         self.resume_button.setEnabled(False)
-    
+
     def on_cancel_clicked(self):
         """Cancel the current operation"""
         if self.ser and self.ser.is_open:
             self.ser.write(b'CANCEL\n')
-            
+
         self.is_cancelled = True
         self.operation_running = False
         self.log_message("Операция отменена")
-        
+
         # Disable control buttons
         self.pause_button.setEnabled(False)
         self.resume_button.setEnabled(False)
         self.cancel_button.setEnabled(False)
-        
+
         # Enable operation buttons
         self.read_button.setEnabled(True)
         self.write_button.setEnabled(True)
@@ -834,7 +850,7 @@ class NANDFlasherGUI(QMainWindow):
             return
         # Start with Fusion for better cross-platform consistency
         app.setStyle("Fusion")
-        from PyQt6.QtGui import QPalette, QColor
+        from PyQt6.QtGui import QColor, QPalette
         palette = QPalette()
         if self.theme == "Dark":
             # Dark palette
@@ -904,57 +920,57 @@ class NANDFlasherGUI(QMainWindow):
                 self.restoreState(st)
         except Exception:
             pass
-    
+
     def select_dump(self):
         """Select a dump file"""
         file_path, _ = QFileDialog.getOpenFileName(
-            self, 
-            "Выбрать дамп", 
-            "", 
+            self,
+            "Выбрать дамп",
+            "",
             "Binary files (*.bin);;All files (*)"
         )
-        
+
         if file_path:
             self.selected_dump = file_path
             self.dump_path_label.setText(f"{self.LANG_TEXT[self.LANG]['selected_dump']}{file_path}")
             self.log_message(f"Выбран дамп: {file_path}")
             # Persist last dump path
             self.settings.setValue("last_dump_path", file_path)
-    
+
     def save_dump(self):
         """Save a dump file"""
         initial = self.settings.value("last_dump_path", "")
         file_path, _ = QFileDialog.getSaveFileName(
-            self, 
-            "Сохранить дамп как", 
-            initial, 
+            self,
+            "Сохранить дамп как",
+            initial,
             "Binary files (*.bin);;All files (*)"
         )
-        
+
         if file_path:
             self.selected_dump = file_path
             self.dump_path_label.setText(f"{self.LANG_TEXT[self.LANG]['selected_dump']}{file_path}")
             self.log_message(f"Дамп будет сохранен в: {file_path}")
             self.settings.setValue("last_dump_path", file_path)
             return file_path
-        
+
         return None
-    
+
     def toggle_compression(self, state):
         """Toggle compression setting"""
         self.use_compression = bool(state)
         self.log_message(f"Сжатие данных: {'включено' if self.use_compression else 'отключено'}")
-    
+
     def toggle_blank_skip(self, state):
         """Toggle blank page skipping setting"""
         self.skip_blank_pages = bool(state)
         self.log_message(f"Пропуск пустых страниц: {'включено' if self.skip_blank_pages else 'отключено'}")
-    
+
     def check_power_supply(self):
         """Check power supply status from Pico"""
         if not self.ser or not self.ser.is_open:
             return
-            
+
         try:
             self.ser.reset_input_buffer()
             self.ser.write(b'POWER_CHECK\n')
@@ -970,7 +986,7 @@ class NANDFlasherGUI(QMainWindow):
                         self.log_message(f"Статус питания: {power_info}")
                         return power_info
                 time.sleep(0.01)
-                
+
             self.power_status_label.setText("Неизвестно")
             return "Неизвестно"
         except Exception as e:
@@ -984,14 +1000,14 @@ class OperationThread(QThread):
     status = pyqtSignal(str)
     power_warning = pyqtSignal(str)
     finished = pyqtSignal(bool)
-    
+
     def __init__(self, ser, operation_type, dump_path=None):
         super().__init__()
         self.ser = ser
         self.operation_type = operation_type
         self.dump_data = bytearray()
         self.dump_path = dump_path
-        
+
     def run(self):
         """Run the operation in the thread"""
         try:
@@ -999,21 +1015,21 @@ class OperationThread(QThread):
             timeout = 300  # 5 minutes timeout
             start_time = time.time()
             last_activity = start_time
-            
+
             while True:
                 # Check for timeout
                 if time.time() - last_activity > timeout:
                     self.status.emit("Таймаут операции")
                     break
-                    
+
                 if self.ser.in_waiting > 0:
                     last_activity = time.time()
-                    
+
                     # Read line from Pico
                     line_bytes = self.ser.readline()
                     try:
                         line = line_bytes.decode('utf-8').strip()
-                        
+
                         # Process string responses
                         if line.startswith("PROGRESS:"):
                             try:
@@ -1021,7 +1037,7 @@ class OperationThread(QThread):
                                 self.progress.emit(progress)
                             except ValueError:
                                 pass  # Ignore invalid progress
-                        
+
                         elif line == "READY_FOR_DATA" and self.operation_type == "WRITE":
                             # Stream dump file to Pico
                             if not self.dump_path:
@@ -1044,18 +1060,18 @@ class OperationThread(QThread):
                                 except Exception as e:
                                     self.status.emit(f"Ошибка отправки дампа: {e}")
                                     self.ser.write(b'CANCEL\n')
-                        
+
                         elif line == "PAUSED":
                             self.status.emit("Пауза на устройстве")
-                        
+
                         elif line == "OPERATION_CANCELLED":
                             self.status.emit("Операция отменена устройством")
                             break
-                        
+
                         elif line.startswith("POWER_WARNING:"):
                             power_warning = line.split(":", 1)[1]
                             self.power_warning.emit(power_warning)
-                        
+
                         elif line == "OPERATION_COMPLETE":
                             success = True
                             # If this was a read operation, save the accumulated data
@@ -1066,24 +1082,24 @@ class OperationThread(QThread):
                                     self.status.emit(f"Дамп сохранен в: {self.dump_path}")
                                 except Exception as e:
                                     self.status.emit(f"Ошибка сохранения дампа: {e}")
-                            
+
                             self.status.emit("Операция завершена успешно")
                             break
-                        
+
                         elif line == "NAND_NOT_CONNECTED":
                             self.status.emit("NAND не подключен")
                             break
-                            
+
                     except UnicodeDecodeError:
                         # This is likely binary dump data (for READ operations)
                         if self.operation_type == "READ":
                             self.dump_data.extend(line_bytes)
-                
+
                 # Small delay to prevent high CPU usage
                 self.msleep(10)
-                
+
             self.finished.emit(success)
-            
+
         except Exception as e:
             self.status.emit(f"Ошибка в потоке операции: {str(e)}")
             self.finished.emit(False)
@@ -1092,14 +1108,14 @@ class OperationThread(QThread):
 def main():
     """Main entry point"""
     app = QApplication(sys.argv)
-    
+
     # Set application font
     font = QFont("Arial", 9)
     app.setFont(font)
-    
+
     window = NANDFlasherGUI()
     window.show()
-    
+
     sys.exit(app.exec())
 
 

@@ -3,37 +3,31 @@ GUI interface for Pico NAND Flasher
 Provides a graphical user interface for NAND operations
 """
 import os
-import sys
-import time
-import serial
-import serial.tools.list_ports
-from tkinter import Tk, filedialog, messagebox
+import threading
 import tkinter as tk
 import tkinter.ttk as ttk
-import threading
-from typing import Optional, Callable
+from tkinter import Tk, filedialog, messagebox
+from typing import Optional
 
-from ..hardware.nand_controller import NANDController
-from ..utils.logging_config import get_logger
+import serial
+import serial.tools.list_ports
+
 from ..config.settings import config_manager
+from ..hardware.nand_controller import NANDController
 from ..utils.exceptions import (
     ConnectionException,
-    NANDDetectionException,
-    ReadException,
-    WriteException,
-    EraseException,
-    OperationException
 )
 from ..utils.i18n import i18n
+from ..utils.logging_config import get_logger
 
 
 class NANDFlasherGUI:
     """Main GUI class for NAND Flasher operations"""
-    
+
     def __init__(self):
         self.logger = get_logger()
         self.controller = NANDController()
-        
+
         # GUI elements
         self.root = Tk()
         # Set language from config (defaults to English)
@@ -49,19 +43,19 @@ class NANDFlasherGUI:
             title = i18n.t('title') or title
         self.root.title(title)
         self.root.geometry("800x600")
-        
+
         # Variables
         self.selected_dump_path = ""
         self.selected_operation = ""
         self.is_connected = False
         self.is_operation_running = False
-        
+
         # Create GUI elements
         self.create_widgets()
-        
+
         # Setup logging
         self.logger.info("GUI initialized")
-    
+
     def create_widgets(self):
         """Create and layout GUI widgets"""
         # Menu bar
@@ -148,12 +142,12 @@ class NANDFlasherGUI:
         # Main frame
         main_frame = ttk.Frame(self.root, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        
+
         # Connection frame
         conn_label = i18n.t('connection')
         conn_frame = ttk.LabelFrame(main_frame, text=conn_label, padding="5")
         conn_frame.grid(row=0, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=5)
-        
+
         btn_connect = i18n.t('connect_button')
         btn_disconnect = i18n.t('disconnect_button')
         status_disconnected = i18n.t('status_disconnected')
@@ -161,54 +155,54 @@ class NANDFlasherGUI:
         ttk.Button(conn_frame, text=btn_disconnect, command=self.disconnect).grid(row=0, column=1, padx=5)
         self.conn_status_label = ttk.Label(conn_frame, text=status_disconnected)
         self.conn_status_label.grid(row=0, column=2, padx=10)
-        
+
         # NAND info frame
         nand_frame = ttk.LabelFrame(main_frame, text=i18n.t('nand_information'), padding="5")
         nand_frame.grid(row=1, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=5)
-        
+
         self.nand_info_label = ttk.Label(nand_frame, text=i18n.t('nand_not_detected'))
         self.nand_info_label.grid(row=0, column=0, sticky=tk.W)
-        
+
         # File operations frame
         file_frame = ttk.LabelFrame(main_frame, text=i18n.t('file_operations'), padding="5")
         file_frame.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=5)
-        
+
         btn_select_dump = i18n.t('operations_select_dump')
         ttk.Button(file_frame, text=btn_select_dump, command=self.select_dump).grid(row=0, column=0, padx=5)
         self.dump_label = ttk.Label(file_frame, text=i18n.t('no_file_selected'))
         self.dump_label.grid(row=0, column=1, padx=5, sticky=tk.W)
-        
+
         # Operations frame
         op_frame = ttk.LabelFrame(main_frame, text=i18n.t('operations'), padding="5")
         op_frame.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=5)
-        
+
         btn_read = i18n.t('nand_operations_read')
         btn_write = i18n.t('nand_operations_write')
         btn_erase = i18n.t('nand_operations_erase')
         ttk.Button(op_frame, text=btn_read, command=self.read_nand).grid(row=0, column=0, padx=5, pady=2)
         ttk.Button(op_frame, text=btn_write, command=self.write_nand).grid(row=0, column=1, padx=5, pady=2)
         ttk.Button(op_frame, text=btn_erase, command=self.erase_nand).grid(row=0, column=2, padx=5, pady=2)
-        
+
         # Progress bar
         progress_frame = ttk.Frame(main_frame)
         progress_frame.grid(row=4, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=10)
-        
+
         self.progress_var = tk.DoubleVar()
         self.progress_bar = ttk.Progressbar(progress_frame, variable=self.progress_var, maximum=100)
         self.progress_bar.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=5)
         self.progress_label = ttk.Label(progress_frame, text=i18n.t('ready'))
         self.progress_label.grid(row=0, column=1, padx=5)
-        
+
         # Status frame
         status_frame = ttk.Frame(main_frame)
         status_frame.grid(row=5, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=5)
-        
+
         self.status_label = ttk.Label(status_frame, text=i18n.t('ready'))
         self.status_label.grid(row=0, column=0, sticky=tk.W)
         # Resume status label
         self.resume_label = ttk.Label(status_frame, text="")
         self.resume_label.grid(row=0, column=1, sticky=tk.W, padx=10)
-        
+
         # Configure grid weights
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
@@ -223,32 +217,32 @@ class NANDFlasherGUI:
             messagebox.showinfo(i18n.t('settings'), i18n.t('language_applied'))
         except Exception:
             pass
-    
+
     def connect(self):
         """Connect to the Pico device"""
         self.logger.info("Attempting to connect to Pico...")
-        
+
         # Try to auto-detect port
         ports = list(serial.tools.list_ports.comports())
         pico_port = None
         for port in ports:
-            if ("Pico" in port.description or 
-                "Serial" in port.description or 
+            if ("Pico" in port.description or
+                "Serial" in port.description or
                 "UART" in port.description):
                 pico_port = port.device
                 break
-        
+
         if not pico_port:
             # If auto-detect fails, ask user
             messagebox.showinfo(i18n.t('connection_title'), i18n.t('connection_manual_select'))
             return
-        
+
         try:
             if self.controller.connect(pico_port):
                 self.is_connected = True
                 self.conn_status_label.config(text=f"Connected to {pico_port}")
                 self.status_label.config(text=i18n.t('status_connected'))
-                
+
                 # Try to detect NAND
                 self.detect_nand()
             else:
@@ -262,7 +256,7 @@ class NANDFlasherGUI:
             self.logger.error(f"Unexpected error during connection: {e}")
             messagebox.showerror(i18n.t('connection_error_title'), i18n.t('connection_error'))
             self.conn_status_label.config(text=i18n.t('connection_error'))
-    
+
     def disconnect(self):
         """Disconnect from the Pico device"""
         if self.is_connected:
@@ -272,12 +266,12 @@ class NANDFlasherGUI:
             self.nand_info_label.config(text=i18n.t('nand_not_detected'))
             self.status_label.config(text=i18n.t('status_disconnected'))
             self.logger.info("Disconnected from Pico")
-    
+
     def detect_nand(self):
         """Detect connected NAND chip"""
         if not self.is_connected:
             return
-        
+
         detected, model, info = self.controller.detect_nand()
         if detected and model:
             info_text = f"NAND: {model}"
@@ -304,19 +298,19 @@ class NANDFlasherGUI:
             self.nand_info_label.config(text=i18n.t('nand_not_detected'))
             self.status_label.config(text=i18n.t('nand_not_detected'))
             self.resume_label.config(text="")
-    
+
     def select_dump(self):
         """Select a dump file"""
         file_path = filedialog.askopenfilename(
             title=i18n.t('select_dump_title'),
             filetypes=[("Binary files", "*.bin"), ("All files", "*.*")]
         )
-        
+
         if file_path:
             self.selected_dump_path = file_path
             self.dump_label.config(text=os.path.basename(file_path))
             self.logger.info(f"Selected dump file: {file_path}")
-    
+
     def save_dump(self) -> Optional[str]:
         """Prompt to save dump file"""
         file_path = filedialog.asksaveasfilename(
@@ -324,24 +318,24 @@ class NANDFlasherGUI:
             defaultextension=".bin",
             filetypes=[("Binary files", "*.bin"), ("All files", "*.*")]
         )
-        
+
         if file_path:
             self.selected_dump_path = file_path
             self.dump_label.config(text=os.path.basename(file_path))
             self.logger.info(f"Selected save location: {file_path}")
-        
+
         return file_path
-    
+
     def update_progress(self, value: int):
         """Update progress bar and label"""
         self.progress_var.set(value)
         self.progress_label.config(text=f"{value}%")
         self.root.update_idletasks()
-    
+
     def set_operation_running(self, running: bool):
         """Set operation running state and update UI accordingly"""
         self.is_operation_running = running
-        
+
         # Disable/enable buttons based on operation state
         for child in self.root.winfo_children():
             for widget in child.winfo_children():
@@ -352,26 +346,26 @@ class NANDFlasherGUI:
                     else:
                         if widget.cget('text') in ['Read NAND', 'Write NAND', 'Erase NAND']:
                             widget.config(state='normal')
-    
+
     def read_nand(self):
         """Start NAND read operation"""
         if not self.is_connected:
             messagebox.showerror(i18n.t('error_title'), i18n.t('not_connected_to_pico'))
             return
-        
+
         if not self.controller.current_nand_info:
             messagebox.showwarning(i18n.t('warning_title'), i18n.t('no_nand_detected'))
             return
-        
+
         # Ask for save location
         save_path = self.save_dump()
         if not save_path:
             return
-        
+
         # Confirm operation
         if not messagebox.askyesno(i18n.t('confirm_read_title'), i18n.t('confirm_read_text')):
             return
-        
+
         # Resume prompt (if applicable)
         try:
             resume = self.controller.get_resume_state()
@@ -384,7 +378,7 @@ class NANDFlasherGUI:
         # Start operation in separate thread
         self.set_operation_running(True)
         self.status_label.config(text=i18n.t('reading_nand'))
-        
+
         def read_thread():
             try:
                 data = self.controller.read_nand(progress_callback=self.update_progress)
@@ -404,27 +398,27 @@ class NANDFlasherGUI:
                 self.set_operation_running(False)
                 self.progress_var.set(0)
                 self.progress_label.config(text=i18n.t('ready'))
-        
+
         threading.Thread(target=read_thread, daemon=True).start()
-    
+
     def write_nand(self):
         """Start NAND write operation"""
         if not self.is_connected:
             messagebox.showerror(i18n.t('error_title'), i18n.t('not_connected_to_pico'))
             return
-        
+
         if not self.controller.current_nand_info:
             messagebox.showwarning(i18n.t('warning_title'), i18n.t('no_nand_detected'))
             return
-        
+
         if not self.selected_dump_path or not os.path.exists(self.selected_dump_path):
             messagebox.showerror(i18n.t('error_title'), i18n.t('please_select_dump'))
             return
-        
+
         # Confirm operation
         if not messagebox.askyesno(i18n.t('confirm_write_title'), i18n.t('confirm_write_text')):
             return
-        
+
         # Resume prompt (if applicable)
         try:
             resume = self.controller.get_resume_state()
@@ -437,12 +431,12 @@ class NANDFlasherGUI:
         # Start operation in separate thread
         self.set_operation_running(True)
         self.status_label.config(text=i18n.t('writing_nand'))
-        
+
         def write_thread():
             try:
                 with open(self.selected_dump_path, 'rb') as f:
                     data = f.read()
-                
+
                 success = self.controller.write_nand(data, progress_callback=self.update_progress)
                 if success:
                     self.status_label.config(text=i18n.t('write_completed'))
@@ -458,23 +452,23 @@ class NANDFlasherGUI:
                 self.set_operation_running(False)
                 self.progress_var.set(0)
                 self.progress_label.config(text=i18n.t('ready'))
-        
+
         threading.Thread(target=write_thread, daemon=True).start()
-    
+
     def erase_nand(self):
         """Start NAND erase operation"""
         if not self.is_connected:
             messagebox.showerror(i18n.t('error_title'), i18n.t('not_connected_to_pico'))
             return
-        
+
         if not self.controller.current_nand_info:
             messagebox.showwarning("Warning", "No NAND chip detected")
             return
-        
+
         # Confirm operation
         if not messagebox.askyesno(i18n.t('confirm_erase_title'), i18n.t('confirm_erase_text')):
             return
-        
+
         # Resume prompt (if applicable)
         try:
             resume = self.controller.get_resume_state()
@@ -487,7 +481,7 @@ class NANDFlasherGUI:
         # Start operation in separate thread
         self.set_operation_running(True)
         self.status_label.config(text=i18n.t('erasing_nand'))
-        
+
         def erase_thread():
             try:
                 success = self.controller.erase_nand(progress_callback=self.update_progress)
@@ -505,9 +499,9 @@ class NANDFlasherGUI:
                 self.set_operation_running(False)
                 self.progress_var.set(0)
                 self.progress_label.config(text="Ready")
-        
+
         threading.Thread(target=erase_thread, daemon=True).start()
-    
+
     def run(self):
         """Start the GUI main loop"""
         self.logger.info("Starting GUI main loop")

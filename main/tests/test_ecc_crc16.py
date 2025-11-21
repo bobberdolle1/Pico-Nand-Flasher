@@ -1,10 +1,10 @@
 """
 Unit tests for CRC16-based ECC scheme verification (no correction)
 """
-import unittest
 import os
+import unittest
 
-from src.utils.ecc import verify_and_correct, _crc16_ccitt
+from src.utils.ecc import _crc16_ccitt, verify_and_correct
 
 
 class TestEccCRC16(unittest.TestCase):

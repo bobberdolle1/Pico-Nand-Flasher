@@ -1,9 +1,10 @@
 """
 Unit tests for CRC32 implementation in Pico NAND Flasher
 """
-import unittest
-import sys
 import os
+import sys
+import unittest
+
 
 # Mock MicroPython modules for testing
 class MockPin:
@@ -20,7 +21,7 @@ class MockUART:
 class MockADC:
     def __init__(self, *args):
         pass
-    
+
     def read_u16(self):
         return 32768  # Mock value
 
@@ -59,7 +60,7 @@ from main_performance import NANDFlasher
 
 class TestCRC32(unittest.TestCase):
     """Test CRC32 implementation"""
-    
+
     def setUp(self):
         """Set up test fixture"""
         # Create NANDFlasher without calling __init__ to avoid hardware dependencies
@@ -69,14 +70,14 @@ class TestCRC32(unittest.TestCase):
         self.nand_flasher.skip_blank_pages = True
         self.nand_flasher.last_block_position = 0
         self.nand_flasher.hash_chunks = {}
-    
+
     def test_crc32_empty_data(self):
         """Test CRC32 calculation for empty data"""
         data = bytearray()
         expected_crc = 0x00000000  # CRC32 of empty data should be 0 according to zlib
         actual_crc = self.nand_flasher.calculate_chunk_hash(data)
         self.assertEqual(actual_crc, expected_crc)
-    
+
     def test_crc32_single_byte(self):
         """Test CRC32 calculation for single byte"""
         # Test with known values
@@ -85,14 +86,14 @@ class TestCRC32(unittest.TestCase):
         # Expected CRC32 for [0x00] is 0xD202EF8D according to zlib
         expected_crc = 0xD202EF8D
         self.assertEqual(actual_crc, expected_crc)
-        
+
         # Test with another single byte
         data = bytearray([0xFF])
         actual_crc = self.nand_flasher.calculate_chunk_hash(data)
         # Expected CRC32 for [0xFF] is 0xFF000000 according to zlib
         expected_crc = 0xFF000000
         self.assertEqual(actual_crc, expected_crc)
-    
+
     def test_crc32_known_data(self):
         """Test CRC32 calculation for known data"""
         # Test with "123456789" as a standard test case
@@ -102,7 +103,7 @@ class TestCRC32(unittest.TestCase):
         # Expected CRC32 for "123456789" is 0xCBF43926
         expected_crc = 0xCBF43926
         self.assertEqual(actual_crc, expected_crc)
-    
+
     def test_crc32_multiple_bytes(self):
         """Test CRC32 calculation for multiple bytes"""
         data = bytearray([0xDE, 0xAD, 0xBE, 0xEF])
@@ -110,14 +111,14 @@ class TestCRC32(unittest.TestCase):
         # Expected CRC32 for [0xDE, 0xAD, 0xBE, 0xEF] is 0x7C9CA35A according to zlib
         expected_crc = 0x7C9CA35A
         self.assertEqual(actual_crc, expected_crc)
-    
+
     def test_crc32_consistency(self):
         """Test that CRC32 is consistent for the same data"""
         data = bytearray([0x01, 0x02, 0x03, 0x04, 0x05])
         crc1 = self.nand_flasher.calculate_chunk_hash(data)
         crc2 = self.nand_flasher.calculate_chunk_hash(data)
         self.assertEqual(crc1, crc2)
-    
+
     def test_crc32_different_data(self):
         """Test that different data produces different CRC32"""
         data1 = bytearray([0x01, 0x02, 0x03])

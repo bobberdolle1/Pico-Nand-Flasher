@@ -6,22 +6,23 @@ This script runs on the Pico and handles communication with NAND Flash chips,
 providing read, write, and erase functionality via UART communication.
 """
 
-from machine import Pin, UART
-import time
 import sys
+import time
+
+from machine import UART, Pin
 
 
 class NANDFlasher:
     """Main class for NAND Flash operations on Raspberry Pi Pico"""
-    
+
     def __init__(self):
         # Configuration
         self.BAUDRATE = 921600
-        
+
         # Initialize UART for communication with computer
         self.uart = UART(0, baudrate=self.BAUDRATE, tx=Pin(0), rx=Pin(1))
         self.uart.init(bits=8, parity=None, stop=1)
-        
+
         # Initialize NAND interface pins
         self.io_pins = [
             Pin(5, Pin.IN, Pin.PULL_UP),   # I/O0 - GP5
@@ -33,7 +34,7 @@ class NANDFlasher:
             Pin(11, Pin.IN, Pin.PULL_UP),  # I/O6 - GP11
             Pin(12, Pin.IN, Pin.PULL_UP)   # I/O7 - GP12
         ]
-        
+
         # Control pins
         self.cle_pin = Pin(13, Pin.OUT)    # CLE - GP13
         self.ale_pin = Pin(14, Pin.OUT)    # ALE - GP14
@@ -41,14 +42,14 @@ class NANDFlasher:
         self.re_pin = Pin(16, Pin.OUT)     # RE# - GP16
         self.we_pin = Pin(17, Pin.OUT)     # WE# - GP17
         self.rb_pin = Pin(18, Pin.IN, Pin.PULL_UP)      # R/B# - GP18
-        
+
         # Initialize control pins to inactive state
         self.cle_pin.value(0)
         self.ale_pin.value(0)
         self.ce_pin.value(1)  # CE# active LOW
         self.re_pin.value(1)  # RE# active LOW
         self.we_pin.value(1)  # WE# active LOW
-        
+
         # Supported NAND chips database
         self.supported_nand = {
             # Samsung
@@ -76,7 +77,7 @@ class NANDFlasher:
             # SanDisk
             "SanDisk SDTNQGAMA-008G": {"id": [0x45, 0xD7], "page_size": 4096, "block_size": 256, "blocks": 8192}
         }
-        
+
         self.current_nand = (None, None)
         # Control flags for protocol-level pause/cancel
         self.cancelled = False
@@ -120,7 +121,7 @@ class NANDFlasher:
                         return True
             time.sleep_ms(5)
         return False
-    
+
     def _read_exact(self, n, timeout_ms=5000):
         """Read exactly n bytes from UART or return None on timeout/cancel.
         Respects pause/cancel via _poll_control()."""
@@ -142,7 +143,7 @@ class NANDFlasher:
             if time.ticks_diff(time.ticks_ms(), start) > timeout_ms:
                 return None
         return buf
-    
+
     def wait_for_ready(self, timeout_ms=5000):
         """Wait for NAND to be ready (R/B# = HIGH)"""
         start_time = time.ticks_ms()
@@ -150,47 +151,47 @@ class NANDFlasher:
             if time.ticks_diff(time.ticks_ms(), start_time) > timeout_ms:
                 return False
         return True
-    
+
     def set_io_output(self):
         """Switch I/O pins to output mode"""
         for pin in self.io_pins:
             pin.init(Pin.OUT)
-    
+
     def set_io_input(self):
         """Switch I/O pins to input mode with pull-up"""
         for pin in self.io_pins:
             pin.init(Pin.IN, Pin.PULL_UP)
-    
+
     def write_byte(self, data):
         """Write a byte to NAND"""
         # Set data on I/O pins
         for i, pin in enumerate(self.io_pins):
             pin.value((data >> i) & 1)
-        
+
         # Activate WE# pulse
         self.we_pin.value(0)
         self.we_pin.value(1)
-    
+
     def read_byte(self):
         """Read a byte from NAND"""
         # Switch I/O pins to input
         self.set_io_input()
-        
+
         # Activate RE# pulse
         self.re_pin.value(0)
-        
+
         # Read data
         data = 0
         for i, pin in enumerate(self.io_pins):
             data |= (pin.value() << i)
-        
+
         self.re_pin.value(1)
-        
+
         # Return I/O pins to output mode
         self.set_io_output()
-        
+
         return data
-    
+
     def send_address_cycles(self, addr, cycles):
         """Send address to NAND in specified number of cycles"""
         self.ale_pin.value(1)  # Set ALE
@@ -198,7 +199,7 @@ class NANDFlasher:
             self.write_byte(addr & 0xFF)
             addr >>= 8
         self.ale_pin.value(0)  # Reset ALE
-    
+
     def send_command(self, cmd):
         """Send command to NAND"""
         self.ce_pin.value(0)   # Activate CE#
@@ -206,194 +207,194 @@ class NANDFlasher:
         self.write_byte(cmd)
         self.cle_pin.value(0)  # Reset CLE
         # Keep CE# active for subsequent operations
-    
+
     def read_status(self):
         """Read NAND status register"""
         self.send_command(0x70)  # Read Status command
         status = self.read_byte()
         self.ce_pin.value(1)  # Deactivate CE#
         return status
-    
+
     def is_status_fail(self, status):
         """Check if status indicates failure"""
         return (status & 0x01) == 0x01
-    
+
     def read_nand_id(self):
         """Read NAND ID"""
         # Send Read ID command
         self.send_command(0x90)
-        
+
         # Send address 0x00
         self.ale_pin.value(1)
         self.write_byte(0x00)
         self.ale_pin.value(0)
-        
+
         # Wait for ready
         if not self.wait_for_ready(1000):
             self.ce_pin.value(1)
             return [0xFF, 0xFF, 0xFF, 0xFF]  # Return "empty" ID on timeout
-        
+
         # Read ID bytes
         id_bytes = []
         for _ in range(6):  # Read 6 bytes for reliability
             id_bytes.append(self.read_byte())
-        
+
         self.ce_pin.value(1)  # Deactivate CE#
-        
+
         return id_bytes[:4]  # Return first 4 bytes
-    
+
     def detect_nand(self):
         """Attempt to detect NAND type"""
         try:
             # Initialize pins
             self.set_io_output()
             time.sleep_ms(10)  # Small delay for stabilization
-            
+
             nand_id = self.read_nand_id()
-            
+
             for name, info in self.supported_nand.items():
                 if nand_id[:len(info["id"])] == info["id"]:
                     return (name, info)
             return (None, None)
-        except Exception as e:
+        except Exception:
             return (None, None)
-    
+
     def read_page(self, nand_info, page_addr, buffer):
         """Read a single page of data and spare area"""
         try:
             page_size = nand_info["page_size"]
             block_size = nand_info["block_size"]
-            
+
             # Step 1: Read command (00h)
             self.send_command(0x00)
-            
+
             # Step 2: Send address (5 cycles for most modern NAND)
             # Address format: Column (0) + Page Address
             full_addr = page_addr * page_size
             self.send_address_cycles(full_addr, 5)
-            
+
             # Step 3: Read Confirm command (30h)
             self.send_command(0x30)
-            
+
             # Step 4: Wait for ready
             if not self.wait_for_ready():
                 self.ce_pin.value(1)
                 return False
-            
+
             # Step 5: Read page data
             for i in range(page_size):
                 buffer[i] = self.read_byte()
-            
+
             # Step 6: Read spare area (OOB)
             spare_size = 64
             if page_size == 4096:
                 spare_size = 128
             elif page_size == 2048:
                 spare_size = 64
-                
+
             for i in range(spare_size):
                 buffer[page_size + i] = self.read_byte()
-                
+
             self.ce_pin.value(1)  # Deactivate CE#
             return True
-            
-        except Exception as e:
+
+        except Exception:
             self.ce_pin.value(1)
             return False
-    
+
     def write_page(self, nand_info, page_addr, data_buffer):
         """Write a single page of data and spare area"""
         try:
             page_size = nand_info["page_size"]
             block_size = nand_info["block_size"]
-            
+
             # Step 1: Serial Data Input command (80h)
             self.send_command(0x80)
-            
+
             # Step 2: Send address (5 cycles)
             full_addr = page_addr * page_size
             self.send_address_cycles(full_addr, 5)
-            
+
             # Step 3: Write page data
             for i in range(page_size):
                 self.write_byte(data_buffer[i])
-            
+
             # Step 4: Write spare area
             spare_size = 64
             if page_size == 4096:
                 spare_size = 128
             elif page_size == 2048:
                 spare_size = 64
-                
+
             for i in range(spare_size):
                 self.write_byte(data_buffer[page_size + i])
-                
+
             # Step 5: Program Confirm command (10h)
             self.send_command(0x10)
-            
+
             # Step 6: Wait for ready (up to 5 seconds)
             if not self.wait_for_ready(5000):
                 self.ce_pin.value(1)
                 return False
-                
+
             # Step 7: Check status
             status = self.read_status()
             if self.is_status_fail(status):
                 return False
-                
+
             self.ce_pin.value(1)  # Deactivate CE#
             return True
-            
-        except Exception as e:
+
+        except Exception:
             self.ce_pin.value(1)
             return False
-    
+
     def erase_block(self, nand_info, block_addr):
         """Erase a single block"""
         try:
             block_size = nand_info["block_size"]
             page_addr = block_addr * block_size  # Address of first page in block
-            
+
             # Step 1: Block Erase command (60h)
             self.send_command(0x60)
-            
+
             # Step 2: Send block address (3 cycles, high bits of page address)
             self.send_address_cycles(page_addr, 3)
-            
+
             # Step 3: Erase Confirm command (D0h)
             self.send_command(0xD0)
-            
+
             # Step 4: Wait for ready (can take several seconds)
             if not self.wait_for_ready(10000):  # 10 second timeout
                 self.ce_pin.value(1)
                 return False
-                
+
             # Step 5: Check status
             status = self.read_status()
             if self.is_status_fail(status):
                 return False
-                
+
             self.ce_pin.value(1)  # Deactivate CE#
             return True
-            
-        except Exception as e:
+
+        except Exception:
             self.ce_pin.value(1)
             return False
-    
+
     def wait_for_command(self):
         """Read command from UART"""
         data = self.uart.readline()
         if data:
             return data.decode('utf-8').strip()
         return ""
-    
+
     def send_status(self):
         """Send status to GUI"""
         if self.current_nand[0]:
             self.uart.write(f"MODEL:{self.current_nand[0]}\n")
         else:
             self.uart.write("MODEL:UNKNOWN\n")
-    
+
     def read_nand_operation(self):
         """Read entire NAND content"""
         if not self.current_nand[0]:
@@ -408,12 +409,12 @@ class NANDFlasher:
             spare_size = 128
         elif page_size == 2048:
             spare_size = 64
-            
+
         page_total_size = page_size + spare_size
 
         # Buffer for one page + spare
         page_buffer = bytearray(page_total_size)
-        
+
         try:
             # Reset control flags at start
             self.cancelled = False
@@ -426,18 +427,18 @@ class NANDFlasher:
                 if not self.read_page(info, page, page_buffer):
                     self.uart.write("OPERATION_FAILED\n")
                     return
-                
+
                 # Send page data via UART
                 self.uart.write(page_buffer)
-                
+
                 # Send progress
                 progress = int((page + 1) * 100 / total_pages)
                 self.uart.write(f"PROGRESS:{progress}\n")
-                
+
             self.uart.write("OPERATION_COMPLETE\n")
-        except Exception as e:
+        except Exception:
             self.uart.write("OPERATION_FAILED\n")
-    
+
     def write_nand_operation(self, include_oob=True):
         """Write to NAND from data received via UART.
         include_oob=True means host will send page+spare bytes.
@@ -445,7 +446,7 @@ class NANDFlasher:
         if not self.current_nand[0]:
             self.uart.write("NAND_NOT_CONNECTED\n")
             return
-            
+
         info = self.current_nand[1]
         total_pages = info["blocks"] * info["block_size"]
         page_size = info["page_size"]
@@ -454,12 +455,12 @@ class NANDFlasher:
             spare_size = 128
         elif page_size == 2048:
             spare_size = 64
-            
+
         page_total_size = page_size + (spare_size if include_oob else 0)
-        
+
         # Signal that we're ready to receive data
         self.uart.write("READY_FOR_DATA\n")
-        
+
         try:
             # Reset control flags at start
             self.cancelled = False
@@ -485,15 +486,15 @@ class NANDFlasher:
                 if not self.write_page(info, page, page_buffer):
                     self.uart.write("OPERATION_FAILED\n")
                     return
-                    
+
                 # Send progress
                 progress = int((page + 1) * 100 / total_pages)
                 self.uart.write(f"PROGRESS:{progress}\n")
-                
+
             self.uart.write("OPERATION_COMPLETE\n")
-        except Exception as e:
+        except Exception:
             self.uart.write("OPERATION_FAILED\n")
-    
+
     def erase_nand_operation(self):
         """Erase entire NAND"""
         if not self.current_nand[0]:
@@ -514,15 +515,15 @@ class NANDFlasher:
                 if not self.erase_block(info, block):
                     self.uart.write("OPERATION_FAILED\n")
                     return
-                    
+
                 # Send progress
                 progress = int((block + 1) * 100 / total_blocks)
                 self.uart.write(f"PROGRESS:{progress}\n")
-                
+
             self.uart.write("OPERATION_COMPLETE\n")
-        except Exception as e:
+        except Exception:
             self.uart.write("OPERATION_FAILED\n")
-    
+
     def handle_operation(self, cmd):
         """Handle operation commands"""
         if not self.current_nand[0]:
@@ -537,9 +538,9 @@ class NANDFlasher:
                 self.write_nand_operation(False)
             elif cmd == 'ERASE':
                 self.erase_nand_operation()
-        except Exception as e:
+        except Exception:
             self.uart.write("OPERATION_FAILED\n")
-    
+
     def select_nand_manually(self):
         """Manual NAND model selection"""
         self.uart.write("MANUAL_SELECT_START\n")
@@ -547,7 +548,7 @@ class NANDFlasher:
         for i, name in enumerate(names):
             self.uart.write(f"{i+1}:{name}\n")
         self.uart.write("MANUAL_SELECT_END\n")
-        
+
         # Wait for user selection
         while True:
             cmd = self.wait_for_command()
@@ -559,17 +560,17 @@ class NANDFlasher:
                         return (name, self.supported_nand[name])
                 except:
                     pass
-    
+
     def main_loop(self):
         """Main program loop"""
         # Set I/O pins to output mode by default
         self.set_io_output()
         time.sleep_ms(100)  # Stabilization time
-        
+
         while True:
             self.uart.write("🔍 Определение NAND...\n")
             self.current_nand = self.detect_nand()
-            
+
             if not self.current_nand[0]:
                 self.uart.write("❌ NAND не обнаружен! Продолжить вручную? (y/n): \n")
                 # Wait for response from GUI
@@ -593,7 +594,7 @@ class NANDFlasher:
                 cmd = self.wait_for_command()
                 if not cmd:
                     continue
-                
+
                 if cmd == 'STATUS':
                     self.send_status()
                 elif cmd in ['READ', 'WRITE', 'ERASE', 'WRITE_NO_OOB']:
@@ -621,5 +622,5 @@ if __name__ == "__main__":
         flasher.main_loop()
     except KeyboardInterrupt:
         pass
-    except Exception as e:
+    except Exception:
         pass

@@ -1,14 +1,15 @@
 import os
 import sys
+
+from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
     QApplication,
-    QMainWindow,
-    QWidget,
-    QVBoxLayout,
-    QPushButton,
     QLabel,
+    QMainWindow,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
-from PyQt6.QtGui import QFont
 
 # Ensure project root is on sys.path to allow imports like src.* when launched directly
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))

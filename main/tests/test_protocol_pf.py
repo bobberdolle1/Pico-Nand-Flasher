@@ -1,6 +1,8 @@
 import struct
-from src.hardware.nand_controller import NANDController
+
 from src.config.settings import config_manager
+from src.hardware.nand_controller import NANDController
+
 
 class FakeSerialBinary:
     def __init__(self, data_bytes: bytes):

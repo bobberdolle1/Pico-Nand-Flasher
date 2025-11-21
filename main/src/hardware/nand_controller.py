@@ -2,29 +2,26 @@
 Hardware abstraction layer for NAND Flash operations
 Provides a clean interface between the application logic and hardware communication
 """
-import time
-import struct
-import zlib
-import serial
-from typing import Optional, Tuple, Dict, List
-from pathlib import Path
 import json
-from ..utils.logging_config import get_logger
-from ..utils.ecc import verify_and_correct
+import struct
+import time
+import zlib
+from pathlib import Path
+from typing import Dict, Optional, Tuple
+
+import serial
+
 from ..config.settings import config_manager
+from ..utils.ecc import verify_and_correct
 from ..utils.exceptions import (
-    ConnectionException, 
-    NANDDetectionException, 
-    ReadException, 
-    WriteException, 
-    EraseException,
-    OperationException
+    ConnectionException,
 )
+from ..utils.logging_config import get_logger
 
 
 class NANDController:
     """Hardware abstraction layer for NAND Flash operations"""
-    
+
     def __init__(self):
         self.logger = get_logger()
         self.ser: Optional[serial.Serial] = None
@@ -49,7 +46,7 @@ class NANDController:
         self.CMD_MODEL = 0x14
         self.CMD_POWER_WARNING = 0x15
         self.CMD_PAGE_CRC = 0x16
-        
+
         # Supported NAND chips database
         self.supported_nand = {
             # Samsung
@@ -77,7 +74,7 @@ class NANDController:
             # SanDisk
             "SanDisk SDTNQGAMA-008G": {"id": [0x45, 0xD7], "page_size": 4096, "block_size": 256, "blocks": 8192}
         }
-    
+
     def connect(self, port: str) -> bool:
         """
         Connect to the Pico device
@@ -92,12 +89,12 @@ class NANDController:
             self.logger.info(f"Attempting to connect to {port} at {self.baudrate} baud")
             self.ser = serial.Serial(port, self.baudrate, timeout=self.timeout)
             self.ser.flush()
-            
+
             # Small delay for stabilization
             time.sleep(2)
             # Clear input buffer in case of garbage data
             self.ser.reset_input_buffer()
-            
+
             self.is_connected = True
             self.logger.info(f"Successfully connected to {port}")
             return True
@@ -105,7 +102,7 @@ class NANDController:
             self.logger.error(f"Connection error: {e}")
             self.is_connected = False
             raise ConnectionException(f"Failed to connect to {port}: {e}") from e
-    
+
     def disconnect(self) -> None:
         """Disconnect from the Pico device"""
         if self.ser and self.ser.is_open:
@@ -195,7 +192,7 @@ class NANDController:
     def _load_resume_state(self) -> Dict:
         try:
             if self._resume_path.exists():
-                with open(self._resume_path, 'r', encoding='utf-8') as f:
+                with open(self._resume_path, encoding='utf-8') as f:
                     return json.load(f)
         except Exception as e:
             self.logger.warning(f"Failed to load resume state: {e}")
@@ -220,7 +217,7 @@ class NANDController:
                 self._resume_path.unlink()
         except Exception as e:
             self.logger.warning(f"Failed to clear resume state: {e}")
-    
+
     def send_command(self, command: str) -> None:
         """
         Send a command to the Pico device
@@ -231,7 +228,7 @@ class NANDController:
         if not self.is_connected or not self.ser:
             self.logger.error("Not connected to device")
             return
-        
+
         try:
             if self.use_binary:
                 cmd_map = {
@@ -243,18 +240,18 @@ class NANDController:
                 code = cmd_map.get(command)
                 if code is None:
                     # Fall back to legacy text if unknown
-                    command_bytes = f"{command}\n".encode('utf-8')
+                    command_bytes = f"{command}\n".encode()
                     self.ser.write(command_bytes)
                 else:
                     self._send_frame(code)
                     self.logger.debug(f"Sent framed command: {command}")
             else:
-                command_bytes = f"{command}\n".encode('utf-8')
+                command_bytes = f"{command}\n".encode()
                 self.ser.write(command_bytes)
                 self.logger.debug(f"Sent command: {command}")
         except Exception as e:
             self.logger.error(f"Error sending command: {e}")
-    
+
     def read_response(self, timeout: Optional[float] = None) -> Optional[str]:
         """
         Read a response from the Pico device
@@ -268,7 +265,7 @@ class NANDController:
         if not self.is_connected or not self.ser:
             self.logger.error("Not connected to device")
             return None
-        
+
         try:
             if self.use_binary:
                 frame = self._read_frame(timeout)
@@ -318,7 +315,7 @@ class NANDController:
         except Exception as e:
             self.logger.error(f"Error reading response: {e}")
             return None
-    
+
     def detect_nand(self) -> Tuple[bool, Optional[str], Optional[Dict]]:
         """
         Detect connected NAND chip
@@ -327,13 +324,13 @@ class NANDController:
             Tuple of (detected, model_name, nand_info)
         """
         self.logger.info("Detecting NAND chip...")
-        
+
         if not self.is_connected:
             return False, None, None
-        
+
         # Send STATUS command to check NAND status
         self.send_command("STATUS")
-        
+
         response = self.read_response()
         if response and response.startswith("MODEL:"):
             model_name = response.split(":", 1)[1]
@@ -341,10 +338,10 @@ class NANDController:
             self.current_nand_info = nand_info
             self.logger.info(f"NAND detected: {model_name}")
             return True, model_name, nand_info
-        
+
         self.logger.info("NAND not detected, manual selection may be required")
         return False, None, None
-    
+
     def read_nand(self, progress_callback=None) -> Optional[bytes]:
         """
         Read data from NAND
@@ -356,21 +353,21 @@ class NANDController:
             NAND data as bytes or None if failed
         """
         self.logger.info("Starting NAND read operation...")
-        
+
         if not self.is_connected or not self.current_nand_info:
             self.logger.error("No connected NAND chip")
             return None
-        
+
         self.send_command("READ")
-        
+
         # Collect data and progress updates
         nand_data = bytearray()
-        total_size = (self.current_nand_info["blocks"] * 
-                     self.current_nand_info["block_size"] * 
+        total_size = (self.current_nand_info["blocks"] *
+                     self.current_nand_info["block_size"] *
                      self.current_nand_info["page_size"])
-        
+
         self.logger.info(f"Reading {total_size} bytes from NAND")
-        
+
         try:
             if self.use_binary:
                 # In framed mode, expect a stream of DATA frames interleaved with PROGRESS and end with COMPLETE
@@ -525,7 +522,7 @@ class NANDController:
         except Exception as e:
             self.logger.error(f"Error during NAND read: {e}")
             return None
-        
+
         # Optionally strip OOB (spare) area from pages if not requested
         try:
             include_oob = bool(config_manager.get('include_oob', False))
@@ -541,7 +538,7 @@ class NANDController:
         except Exception:
             pass
         return bytes(nand_data)
-    
+
     def write_nand(self, data: bytes, progress_callback=None) -> bool:
         """
         Write data to NAND
@@ -554,23 +551,23 @@ class NANDController:
             True if successful, False otherwise
         """
         self.logger.info(f"Starting NAND write operation with {len(data)} bytes...")
-        
+
         if not self.is_connected or not self.current_nand_info:
             self.logger.error("No connected NAND chip")
             return False
-        
+
         self.send_command("WRITE")
-        
+
         # Wait for ready signal
         ready_response = self.read_response()
         if ready_response != "READY_FOR_DATA":
             self.logger.error(f"Device not ready for data: {ready_response}")
             return False
-        
+
         # Send data in chunks
         chunk_size = config_manager.get('chunk_size')
         total_size = len(data)
-        
+
         resume = self._load_resume_state()
         start_offset = 0
         if resume.get("operation") == "WRITE":
@@ -598,7 +595,7 @@ class NANDController:
             except Exception as e:
                 self.logger.error(f"Error sending data chunk: {e}")
                 return False
-            
+
             # Calculate and report progress
             progress = int((i + len(chunk)) / total_size * 100)
             if progress_callback:
@@ -613,14 +610,14 @@ class NANDController:
                     "timestamp": time.time(),
                 })
                 self._save_resume_state(resume)
-        
+
         # Wait for completion
         while True:
             response = self.read_response()
             if not response:
                 self.logger.error("No response from device")
                 return False
-            
+
             if response.startswith("PROGRESS:"):
                 try:
                     progress = int(response.split(":")[1])
@@ -638,7 +635,7 @@ class NANDController:
             elif response == "NAND_NOT_CONNECTED":
                 self.logger.error("NAND not connected")
                 return False
-    
+
     def erase_nand(self, progress_callback=None) -> bool:
         """
         Erase NAND chip
@@ -650,13 +647,13 @@ class NANDController:
             True if successful, False otherwise
         """
         self.logger.info("Starting NAND erase operation...")
-        
+
         if not self.is_connected or not self.current_nand_info:
             self.logger.error("No connected NAND chip")
             return False
-        
+
         self.send_command("ERASE")
-        
+
         try:
             # Host-side ERASE resume handling by tracking progress
             resume = self._load_resume_state()

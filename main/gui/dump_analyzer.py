@@ -4,24 +4,40 @@ Provides tools for analyzing NAND flash dumps including hex view, string extract
 """
 import os
 import sys
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-                            QPushButton, QLabel, QProgressBar, QGroupBox, QFileDialog,
-                            QMessageBox, QTabWidget, QTextEdit, QTableWidget, QTableWidgetItem,
-                            QHeaderView, QSplitter, QLineEdit, QCheckBox)
+
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QIntValidator
-from src.utils.ecc import verify_and_correct
+from PyQt6.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QFileDialog,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QTabWidget,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
+
 from src.config.settings import config_manager
+from src.utils.ecc import verify_and_correct
 
 
 class DumpAnalyzer(QMainWindow):
     """Dump analysis tool for NAND flash dumps"""
-    
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("🔍 Pico NAND Flash Dump Analyzer")
         self.setGeometry(100, 100, 1200, 800)
-        
+
         self.dump_data = None
         self.dump_path = None
         self.second_dump_data = None
@@ -35,67 +51,67 @@ class DumpAnalyzer(QMainWindow):
         self._last_bad_blocks = []
         self._ecc_error_pages = set()
         self._ecc_error_pages_detail = {}
-        
+
         self.init_ui()
-        
+
     def init_ui(self):
         """Initialize the user interface"""
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
-        
+
         # Create tabs
         self.tabs = QTabWidget()
-        
+
         # Hex view tab
         self.hex_tab = QWidget()
         self.setup_hex_tab()
-        
+
         # Strings tab
         self.strings_tab = QWidget()
         self.setup_strings_tab()
-        
+
         # Statistics tab
         self.stats_tab = QWidget()
         self.setup_stats_tab()
-        
+
         # Add tabs
         self.tabs.addTab(self.hex_tab, "Шестнадцатеричный вид")
         self.tabs.addTab(self.strings_tab, "Строки")
         self.tabs.addTab(self.stats_tab, "Статистика")
-        
+
         main_layout.addWidget(self.tabs)
-        
+
         # Menu bar
         menubar = self.menuBar()
         file_menu = menubar.addMenu('Файл')
-        
+
         open_action = file_menu.addAction('Открыть дамп')
         open_action.triggered.connect(self.open_dump)
         open2_action = file_menu.addAction('Открыть второй дамп (для diff)')
         open2_action.triggered.connect(self.open_second_dump)
-        
+
         # Status bar
         self.status_bar = self.statusBar()
         self.status_bar.showMessage("Готов")
-    
+
     def setup_hex_tab(self):
         """Setup the hex view tab"""
         layout = QVBoxLayout(self.hex_tab)
-        
+
         # Controls
         controls_layout = QHBoxLayout()
-        
+
         self.addr_label = QLabel("Адрес (HEX):")
         self.addr_input = QLineEdit()
         self.addr_input.setValidator(QIntValidator(0, 0xFFFFFFFF))
         self.addr_input.setText("0")
-        
+
         self.size_label = QLabel("Размер (HEX):")
         self.size_input = QLineEdit()
         self.size_input.setValidator(QIntValidator(0, 0xFFFFFFFF))
         self.size_input.setText("256")
-        
+
         # NAND geometry
         self.page_label = QLabel("Page size:")
         self.page_input = QLineEdit()
@@ -119,7 +135,7 @@ class DumpAnalyzer(QMainWindow):
         self.refresh_hex_btn.clicked.connect(self.refresh_hex_view)
         self.scan_bad_blocks_btn = QPushButton("Сканировать bad-block")
         self.scan_bad_blocks_btn.clicked.connect(self.scan_bad_blocks)
-        
+
         controls_layout.addWidget(self.addr_label)
         controls_layout.addWidget(self.addr_input)
         controls_layout.addWidget(self.size_label)
@@ -134,57 +150,57 @@ class DumpAnalyzer(QMainWindow):
         controls_layout.addWidget(self.refresh_hex_btn)
         controls_layout.addWidget(self.scan_bad_blocks_btn)
         controls_layout.addStretch()
-        
+
         layout.addLayout(controls_layout)
-        
+
         # Hex view
         self.hex_view = QTextEdit()
         self.hex_view.setReadOnly(True)
         self.hex_view.setFont(QFont("Courier New", 10))
-        
+
         layout.addWidget(self.hex_view)
-    
+
     def setup_strings_tab(self):
         """Setup the strings view tab"""
         layout = QVBoxLayout(self.strings_tab)
-        
+
         # Controls
         controls_layout = QHBoxLayout()
-        
+
         self.min_string_length = QLabel("Мин. длина строки:")
         self.min_string_input = QLineEdit()
         self.min_string_input.setValidator(QIntValidator(1, 1000))
         self.min_string_input.setText("4")
-        
+
         self.search_strings_btn = QPushButton("Найти строки")
         self.search_strings_btn.clicked.connect(self.find_strings)
-        
+
         controls_layout.addWidget(self.min_string_length)
         controls_layout.addWidget(self.min_string_input)
         controls_layout.addWidget(self.search_strings_btn)
         controls_layout.addStretch()
-        
+
         layout.addLayout(controls_layout)
-        
+
         # Strings table
         self.strings_table = QTableWidget()
         self.strings_table.setColumnCount(3)
         self.strings_table.setHorizontalHeaderLabels(["Адрес", "Длина", "Строка"])
         self.strings_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        
+
         layout.addWidget(self.strings_table)
-    
+
     def setup_stats_tab(self):
         """Setup the statistics tab"""
         layout = QVBoxLayout(self.stats_tab)
-        
+
         # Stats display
         self.stats_text = QTextEdit()
         self.stats_text.setReadOnly(True)
         self.stats_text.setFont(QFont("Courier New", 10))
-        
+
         layout.addWidget(self.stats_text)
-        
+
         # Bad blocks table and buttons
         bb_layout = QHBoxLayout()
         self.bad_blocks_table = QTableWidget()
@@ -227,23 +243,23 @@ class DumpAnalyzer(QMainWindow):
         help_layout.addWidget(self.help_btn)
         help_layout.addStretch()
         layout.addLayout(help_layout)
-    
+
     def open_dump(self):
         """Open a dump file"""
         file_path, _ = QFileDialog.getOpenFileName(
-            self, 
-            "Открыть дамп", 
-            "", 
+            self,
+            "Открыть дамп",
+            "",
             "Binary files (*.bin);;All files (*)"
         )
-        
+
         if file_path:
             try:
                 with open(file_path, 'rb') as f:
                     self.dump_data = f.read()
                 self.dump_path = file_path
                 self.status_bar.showMessage(f"Загружен дамп: {os.path.basename(file_path)}, размер: {len(self.dump_data)} байт")
-                
+
                 # Refresh all views
                 self.refresh_hex_view()
                 self.calculate_statistics()
@@ -272,9 +288,9 @@ class DumpAnalyzer(QMainWindow):
     def open_second_dump(self):
         """Open second dump for diff"""
         file_path, _ = QFileDialog.getOpenFileName(
-            self, 
-            "Открыть второй дамп", 
-            "", 
+            self,
+            "Открыть второй дамп",
+            "",
             "Binary files (*.bin);;All files (*)"
         )
         if file_path:
@@ -287,26 +303,26 @@ class DumpAnalyzer(QMainWindow):
                     self.calculate_diff()
             except Exception as e:
                 QMessageBox.critical(self, "Ошибка", f"Не удалось загрузить второй дамп: {str(e)}")
-    
+
     def refresh_hex_view(self):
         """Refresh the hex view"""
         if not self.dump_data:
             self.hex_view.setPlainText("Нет данных для отображения. Откройте дамп.")
             return
-        
+
         try:
             start_addr = int(self.addr_input.text() or "0", 16)
             size = int(self.size_input.text() or "256", 16)
             self.page_size = int(self.page_input.text() or str(self.page_size))
             self.spare_size = int(self.spare_input.text() or str(self.spare_size))
-            
+
             if start_addr >= len(self.dump_data):
                 self.hex_view.setPlainText("Адрес за пределами дампа")
                 return
-                
+
             end_addr = min(start_addr + size, len(self.dump_data))
             data = self.dump_data[start_addr:end_addr]
-            
+
             hex_text = self.format_hex_dump(data, start_addr)
             self.hex_view.setPlainText(hex_text)
         except ValueError:
@@ -323,24 +339,24 @@ class DumpAnalyzer(QMainWindow):
     def on_toggle_ecc(self, state):
         self.show_ecc = (state == Qt.CheckState.Checked)
         self.refresh_hex_view()
-    
+
     def format_hex_dump(self, data, start_addr):
         """Format data as hex dump"""
         if not data:
             return "Нет данных для отображения"
-        
+
         result = []
         bytes_per_line = 16
-        
+
         for i in range(0, len(data), bytes_per_line):
             # Address
             addr = start_addr + i
             line = f"{addr:08X}: "
-            
+
             # Hex bytes
             hex_part = ""
             ascii_part = ""
-            
+
             for j in range(bytes_per_line):
                 if i + j < len(data):
                     byte_val = data[i + j]
@@ -351,7 +367,7 @@ class DumpAnalyzer(QMainWindow):
                         ascii_part += "."
                 else:
                     hex_part += "   "
-            
+
             # Build overlay prefix and page borders
             prefix_flags = []
             # Page border marker
@@ -389,7 +405,7 @@ class DumpAnalyzer(QMainWindow):
 
             line = prefix + line + hex_part + " |" + ascii_part + "|"
             result.append(line)
-        
+
         return "\n".join(result)
 
     def scan_bad_blocks(self):
@@ -462,7 +478,7 @@ class DumpAnalyzer(QMainWindow):
         diff_info = self.status_bar.currentMessage() if self.status_bar else ""
 
         lines = []
-        lines.append(f"# Отчёт анализа дампа\n")
+        lines.append("# Отчёт анализа дампа\n")
         lines.append(f"- Файл: `{os.path.basename(self.dump_path) if self.dump_path else ''}`\n")
         lines.append(f"- Размер: **{total_size}** байт ({total_size/1024/1024:.2f} МБ)\n")
         lines.append(f"- Геометрия: страница {page_sz} байт, OOB {spare_sz} байт, страниц ~ {pages}\n")
@@ -576,22 +592,22 @@ class DumpAnalyzer(QMainWindow):
             if a != b:
                 diffs += 1
         self.status_bar.showMessage(f"Diff: отличающихся байт — {diffs}")
-    
+
     def find_strings(self):
         """Find strings in the dump"""
         if not self.dump_data:
             QMessageBox.warning(self, "Предупреждение", "Сначала откройте дамп")
             return
-        
+
         try:
             min_len = int(self.min_string_input.text() or "4")
         except ValueError:
             min_len = 4
-        
+
         strings = []
         current_string = ""
         current_addr = -1
-        
+
         for i, byte in enumerate(self.dump_data):
             if 32 <= byte <= 126 or byte in [9, 10, 13]:  # Printable chars including tab, newline, carriage return
                 if not current_string:
@@ -602,42 +618,42 @@ class DumpAnalyzer(QMainWindow):
                     strings.append((current_addr, len(current_string), current_string))
                 current_string = ""
                 current_addr = -1
-        
+
         # Handle string at end of file
         if len(current_string) >= min_len:
             strings.append((current_addr, len(current_string), current_string))
-        
+
         # Populate table
         self.strings_table.setRowCount(len(strings))
         for row, (addr, length, string) in enumerate(strings):
             self.strings_table.setItem(row, 0, QTableWidgetItem(f"0x{addr:08X}"))
             self.strings_table.setItem(row, 1, QTableWidgetItem(str(length)))
             self.strings_table.setItem(row, 2, QTableWidgetItem(string))
-    
+
     def calculate_statistics(self):
         """Calculate statistics about the dump"""
         if not self.dump_data:
             self.stats_text.setPlainText("Нет данных для анализа. Откройте дамп.")
             return
-        
+
         total_size = len(self.dump_data)
-        
+
         # Count byte values
         byte_counts = [0] * 256
         for byte in self.dump_data:
             byte_counts[byte] += 1
-        
+
         # Find most and least common bytes
         most_common = max(enumerate(byte_counts), key=lambda x: x[1])
         least_common = min(enumerate(byte_counts), key=lambda x: x[1] if x[1] > 0 else float('inf'))
-        
+
         # Calculate entropy
         entropy = 0
         for count in byte_counts:
             if count > 0:
                 p = count / total_size
                 entropy -= p * (p.bit_length() - 1)  # Approximate log2
-        
+
         # Find blank regions (all 0xFF)
         blank_regions = 0
         in_blank = False
@@ -648,7 +664,7 @@ class DumpAnalyzer(QMainWindow):
                     in_blank = True
             else:
                 in_blank = False
-        
+
         # Create statistics text
         stats_text = f"""Статистика дампа:
         
@@ -665,7 +681,7 @@ class DumpAnalyzer(QMainWindow):
 
 Распределение байтов:
 """
-        
+
         # Show top 10 most common bytes
         stats_text += "\nТоп 10 наиболее частых байтов:\n"
         sorted_bytes = sorted(enumerate(byte_counts), key=lambda x: x[1], reverse=True)
@@ -673,21 +689,21 @@ class DumpAnalyzer(QMainWindow):
             byte_val, count = sorted_bytes[i]
             if count > 0:
                 stats_text += f"  0x{byte_val:02X}: {count:,} раз ({count/total_size*100:.2f}%)\n"
-        
+
         self.stats_text.setPlainText(stats_text)
 
 
 def main():
     """Main entry point"""
     app = QApplication(sys.argv)
-    
+
     # Set application font
     font = QFont("Arial", 9)
     app.setFont(font)
-    
+
     window = DumpAnalyzer()
     window.show()
-    
+
     sys.exit(app.exec())
 
 

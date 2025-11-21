@@ -1,6 +1,7 @@
 import json
 import os
-from typing import Dict, Any
+from typing import Dict
+
 
 class I18n:
     """
@@ -49,7 +50,7 @@ class I18n:
             path = os.path.join(base_dir, filename)
             if os.path.exists(path):
                 try:
-                    with open(path, "r", encoding="utf-8") as f:
+                    with open(path, encoding="utf-8") as f:
                         data = json.load(f)
                         if isinstance(data, dict):
                             self.translations.setdefault(code, {})
