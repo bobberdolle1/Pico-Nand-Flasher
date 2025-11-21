@@ -60,7 +60,7 @@ class CLIInterface:
     def connect_to_device(self, port: Optional[str] = None) -> bool:
         """
         Connect to the Pico device
-        
+
         Args:
             port: Port to connect to. If None, auto-detect
             
