@@ -50,7 +50,7 @@ class ConfigManager:
     def __init__(self, config_path: Optional[str] = None):
         """
         Initialize configuration manager
-        
+
         Args:
             config_path: Path to configuration file. If None, uses default location
         """
