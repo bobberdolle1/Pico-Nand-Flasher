@@ -1,5 +1,3 @@
-
-
 from src.config.settings import config_manager
 from src.hardware.nand_controller import NANDController
 
@@ -8,6 +6,7 @@ class FakeSerialLegacy:
     """Minimal fake serial for legacy text protocol paths.
     Provides readline() returning a queued list of lines and captures writes.
     """
+
     def __init__(self, lines):
         self._lines = [line if line.endswith("\n") else line + "\n" for line in lines]
         self.writes = bytearray()
@@ -42,7 +41,7 @@ class FakeSerialLegacy:
 
 def test_write_resume_crc_validation(tmp_path, monkeypatch):
     # Force legacy text mode for simpler test path
-    monkeypatch.setattr(config_manager.settings, 'use_binary_protocol', False, raising=False)
+    monkeypatch.setattr(config_manager.settings, "use_binary_protocol", False, raising=False)
 
     ctrl = NANDController()
     # Redirect resume.json to temp dir
@@ -73,7 +72,7 @@ def test_write_resume_crc_validation(tmp_path, monkeypatch):
 
 def test_read_resume_discard_bytes(tmp_path, monkeypatch):
     # Note: Full framed binary test would require framing generator; here we test helper math for bytes-to-discard
-    monkeypatch.setattr(config_manager.settings, 'use_binary_protocol', False, raising=False)
+    monkeypatch.setattr(config_manager.settings, "use_binary_protocol", False, raising=False)
     ctrl = NANDController()
     ctrl._resume_path = tmp_path / "resume.json"
     # Create a resume state for READ of 10 pages

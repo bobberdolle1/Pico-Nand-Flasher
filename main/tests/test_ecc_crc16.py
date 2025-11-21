@@ -1,6 +1,7 @@
 """
 Unit tests for CRC16-based ECC scheme verification (no correction)
 """
+
 import os
 import unittest
 
@@ -12,7 +13,7 @@ class TestEccCRC16(unittest.TestCase):
         # Simple data buffer
         data = bytes(range(256)) * 8  # 2048 bytes
         crc = _crc16_ccitt(data)
-        oob = crc.to_bytes(2, 'little') + b"\xFF" * 62
+        oob = crc.to_bytes(2, "little") + b"\xFF" * 62
         out, errors = verify_and_correct(
             data,
             oob,
@@ -25,7 +26,7 @@ class TestEccCRC16(unittest.TestCase):
         data = bytes(range(256)) * 8  # 2048 bytes
         crc = _crc16_ccitt(data)
         # Corrupt the stored CRC in OOB
-        oob = ((crc ^ 0x1234) & 0xFFFF).to_bytes(2, 'little') + b"\xFF" * 62
+        oob = ((crc ^ 0x1234) & 0xFFFF).to_bytes(2, "little") + b"\xFF" * 62
         out, errors = verify_and_correct(
             data,
             oob,
@@ -40,7 +41,7 @@ class TestEccCRC16(unittest.TestCase):
         spare_size = 64
         page = os.urandom(page_size)
         crc = _crc16_ccitt(page)
-        spare = crc.to_bytes(2, 'little') + b"\xFF" * (spare_size - 2)
+        spare = crc.to_bytes(2, "little") + b"\xFF" * (spare_size - 2)
         # Analyzer calls verify_and_correct(data=page, oob=spare, scheme='crc16')
         _, errors = verify_and_correct(page, spare, scheme="crc16")
         self.assertEqual(errors, [])
@@ -58,5 +59,5 @@ class TestEccHamming512Scaffold(unittest.TestCase):
         self.assertTrue(True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

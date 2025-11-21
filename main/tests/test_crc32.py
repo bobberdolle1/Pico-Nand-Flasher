@@ -1,6 +1,7 @@
 """
 Unit tests for CRC32 implementation in Pico NAND Flasher
 """
+
 import os
 import sys
 import unittest
@@ -14,9 +15,11 @@ class MockPin:
     IRQ_FALLING = 4
     IRQ_RISING = 8
 
+
 class MockUART:
     def __init__(self, *args, **kwargs):
         pass
+
 
 class MockADC:
     def __init__(self, *args):
@@ -25,34 +28,35 @@ class MockADC:
     def read_u16(self):
         return 32768  # Mock value
 
+
 class MockFreq:
     pass
 
+
 # Add the pico directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'pico'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "pico"))
 
 # Mock the modules before importing main_performance
-sys.modules['machine'] = type(sys)('machine')
-sys.modules['machine'].Pin = MockPin
-sys.modules['machine'].UART = MockUART
-sys.modules['machine'].ADC = MockADC
-sys.modules['machine'].freq = MockFreq
-sys.modules['machine'].mem32 = 0
+sys.modules["machine"] = type(sys)("machine")
+sys.modules["machine"].Pin = MockPin
+sys.modules["machine"].UART = MockUART
+sys.modules["machine"].ADC = MockADC
+sys.modules["machine"].freq = MockFreq
+sys.modules["machine"].mem32 = 0
 
-sys.modules['uasyncio'] = type(sys)('uasyncio')
-sys.modules['uasyncio'].create_task = lambda x: None
-sys.modules['uasyncio'].run = lambda: None
-sys.modules['uasyncio'].sleep = lambda x: None
+sys.modules["uasyncio"] = type(sys)("uasyncio")
+sys.modules["uasyncio"].create_task = lambda x: None
+sys.modules["uasyncio"].run = lambda: None
+sys.modules["uasyncio"].sleep = lambda x: None
 
-sys.modules['rp2'] = type(sys)('rp2')
-sys.modules['rp2'].PIO = type('PIO', (), {'OUT_LOW': 0, 'OUT_HIGH': 1})
-sys.modules['rp2'].StateMachine = type('StateMachine', (), {
-    'active': lambda x: None,
-    'put': lambda x: None,
-    'get': lambda: 0,
-    'rx_fifo': lambda: 0
-})
-sys.modules['rp2'].asm_pio = lambda *args, **kwargs: lambda func: func
+sys.modules["rp2"] = type(sys)("rp2")
+sys.modules["rp2"].PIO = type("PIO", (), {"OUT_LOW": 0, "OUT_HIGH": 1})
+sys.modules["rp2"].StateMachine = type(
+    "StateMachine",
+    (),
+    {"active": lambda x: None, "put": lambda x: None, "get": lambda: 0, "rx_fifo": lambda: 0},
+)
+sys.modules["rp2"].asm_pio = lambda *args, **kwargs: lambda func: func
 
 # Now import our module
 from main_performance import NANDFlasher
@@ -128,5 +132,5 @@ class TestCRC32(unittest.TestCase):
         self.assertNotEqual(crc1, crc2)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

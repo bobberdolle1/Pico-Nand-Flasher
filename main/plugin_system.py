@@ -2,6 +2,7 @@
 Plugin System for Pico NAND Flasher
 Implements a plugin architecture for supporting different NAND chip types
 """
+
 import importlib.util
 import os
 from abc import ABC, abstractmethod
@@ -107,9 +108,11 @@ class PluginManager:
             # Look for classes that inherit from NANDChipPlugin
             for attr_name in dir(module):
                 attr = getattr(module, attr_name)
-                if (isinstance(attr, type) and
-                    issubclass(attr, NANDChipPlugin) and
-                    attr != NANDChipPlugin):
+                if (
+                    isinstance(attr, type)
+                    and issubclass(attr, NANDChipPlugin)
+                    and attr != NANDChipPlugin
+                ):
                     plugin_instance = attr()
                     plugin_key = f"file_{os.path.basename(file_path)}_{plugin_instance.name.lower().replace(' ', '_')}"
                     self.plugins[plugin_key] = plugin_instance
@@ -126,7 +129,7 @@ class PluginManager:
             return
 
         for filename in os.listdir(directory):
-            if filename.endswith('.py') and not filename.startswith('__'):
+            if filename.endswith(".py") and not filename.startswith("__"):
                 file_path = os.path.join(directory, filename)
                 self.load_plugin_from_file(file_path)
 
@@ -137,7 +140,7 @@ class PluginManager:
     def find_plugin_by_id(self, chip_id: List[int]) -> Optional[NANDChipPlugin]:
         """Find a plugin that matches the given chip ID"""
         for plugin in self.plugins.values():
-            if plugin.chip_id == chip_id[:len(plugin.chip_id)]:
+            if plugin.chip_id == chip_id[: len(plugin.chip_id)]:
                 return plugin
         return None
 
@@ -150,6 +153,7 @@ class PluginManager:
 
 
 # Default implementations for common NAND chips
+
 
 class SamsungK9F4G08U0A(NANDChipPlugin):
     """Samsung K9F4G08U0A - 512MB NAND Flash"""
@@ -180,13 +184,13 @@ class SamsungK9F4G08U0A(NANDChipPlugin):
 
     def get_timing_params(self) -> Dict[str, int]:
         return {
-            "tWC": 25,   # Write cycle time (ns)
-            "tRC": 25,   # Read cycle time (ns)
+            "tWC": 25,  # Write cycle time (ns)
+            "tRC": 25,  # Read cycle time (ns)
             "tREA": 15,  # Access time to read (ns)
-            "tRP": 12,   # Read pulse width (ns)
-            "tWP": 12,   # Write pulse width (ns)
+            "tRP": 12,  # Read pulse width (ns)
+            "tWP": 12,  # Write pulse width (ns)
             "tBERS": 3000,  # Block erase time (ms, typical)
-            "tPROG": 700    # Page program time (µs, typical)
+            "tPROG": 700,  # Page program time (µs, typical)
         }
 
 
@@ -219,13 +223,13 @@ class HynixHY27UF082G2B(NANDChipPlugin):
 
     def get_timing_params(self) -> Dict[str, int]:
         return {
-            "tWC": 30,   # Write cycle time (ns)
-            "tRC": 30,   # Read cycle time (ns)
+            "tWC": 30,  # Write cycle time (ns)
+            "tRC": 30,  # Read cycle time (ns)
             "tREA": 20,  # Access time to read (ns)
-            "tRP": 15,   # Read pulse width (ns)
-            "tWP": 15,   # Write pulse width (ns)
+            "tRP": 15,  # Read pulse width (ns)
+            "tWP": 15,  # Write pulse width (ns)
             "tBERS": 2000,  # Block erase time (ms, typical)
-            "tPROG": 600    # Page program time (µs, typical)
+            "tPROG": 600,  # Page program time (µs, typical)
         }
 
 
@@ -258,13 +262,13 @@ class ToshibaTC58NVG2S3E(NANDChipPlugin):
 
     def get_timing_params(self) -> Dict[str, int]:
         return {
-            "tWC": 20,   # Write cycle time (ns)
-            "tRC": 20,   # Read cycle time (ns)
+            "tWC": 20,  # Write cycle time (ns)
+            "tRC": 20,  # Read cycle time (ns)
             "tREA": 12,  # Access time to read (ns)
-            "tRP": 10,   # Read pulse width (ns)
-            "tWP": 10,   # Write pulse width (ns)
+            "tRP": 10,  # Read pulse width (ns)
+            "tWP": 10,  # Write pulse width (ns)
             "tBERS": 2500,  # Block erase time (ms, typical)
-            "tPROG": 500    # Page program time (µs, typical)
+            "tPROG": 500,  # Page program time (µs, typical)
         }
 
 
@@ -272,8 +276,15 @@ class ToshibaTC58NVG2S3E(NANDChipPlugin):
 class CustomNANDChip(NANDChipPlugin):
     """Example of a custom NAND chip plugin"""
 
-    def __init__(self, name: str, manufacturer: str, chip_id: List[int],
-                 page_size: int, block_size: int, total_blocks: int):
+    def __init__(
+        self,
+        name: str,
+        manufacturer: str,
+        chip_id: List[int],
+        page_size: int,
+        block_size: int,
+        total_blocks: int,
+    ):
         self._name = name
         self._manufacturer = manufacturer
         self._chip_id = chip_id
@@ -307,15 +318,7 @@ class CustomNANDChip(NANDChipPlugin):
 
     def get_timing_params(self) -> Dict[str, int]:
         # Default conservative timings
-        return {
-            "tWC": 30,
-            "tRC": 30,
-            "tREA": 20,
-            "tRP": 15,
-            "tWP": 15,
-            "tBERS": 3000,
-            "tPROG": 700
-        }
+        return {"tWC": 30, "tRC": 30, "tREA": 20, "tRP": 15, "tWP": 15, "tBERS": 3000, "tPROG": 700}
 
 
 def main():

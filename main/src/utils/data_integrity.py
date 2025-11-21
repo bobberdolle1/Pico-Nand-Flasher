@@ -2,6 +2,7 @@
 Data integrity verification module for Pico NAND Flasher
 Provides checksum and verification capabilities for data validation
 """
+
 import hashlib
 import zlib
 from pathlib import Path
@@ -15,15 +16,15 @@ class DataIntegrity:
     def calculate_md5(data: Union[bytes, str]) -> str:
         """
         Calculate MD5 checksum of data
-        
+
         Args:
             data: Input data as bytes or string
-            
+
         Returns:
             MD5 checksum as hexadecimal string
         """
         if isinstance(data, str):
-            data = data.encode('utf-8')
+            data = data.encode("utf-8")
 
         md5_hash = hashlib.md5()
         md5_hash.update(data)
@@ -33,15 +34,15 @@ class DataIntegrity:
     def calculate_sha256(data: Union[bytes, str]) -> str:
         """
         Calculate SHA-256 checksum of data
-        
+
         Args:
             data: Input data as bytes or string
-            
+
         Returns:
             SHA-256 checksum as hexadecimal string
         """
         if isinstance(data, str):
-            data = data.encode('utf-8')
+            data = data.encode("utf-8")
 
         sha256_hash = hashlib.sha256()
         sha256_hash.update(data)
@@ -51,29 +52,30 @@ class DataIntegrity:
     def calculate_crc32(data: Union[bytes, str]) -> int:
         """
         Calculate CRC32 checksum of data
-        
+
         Args:
             data: Input data as bytes or string
-            
+
         Returns:
             CRC32 checksum as integer
         """
         if isinstance(data, str):
-            data = data.encode('utf-8')
+            data = data.encode("utf-8")
 
-        return zlib.crc32(data) & 0xffffffff
+        return zlib.crc32(data) & 0xFFFFFFFF
 
     @staticmethod
-    def verify_file_integrity(file_path: Union[str, Path], expected_checksum: str,
-                            algorithm: str = 'md5') -> Tuple[bool, str]:
+    def verify_file_integrity(
+        file_path: Union[str, Path], expected_checksum: str, algorithm: str = "md5"
+    ) -> Tuple[bool, str]:
         """
         Verify the integrity of a file against an expected checksum
-        
+
         Args:
             file_path: Path to the file to verify
             expected_checksum: Expected checksum value
             algorithm: Algorithm to use ('md5', 'sha256', 'crc32')
-            
+
         Returns:
             Tuple of (is_valid, actual_checksum)
         """
@@ -82,15 +84,15 @@ class DataIntegrity:
         if not file_path.exists():
             raise FileNotFoundError(f"File does not exist: {file_path}")
 
-        with open(file_path, 'rb') as f:
+        with open(file_path, "rb") as f:
             data = f.read()
 
-        if algorithm.lower() == 'md5':
+        if algorithm.lower() == "md5":
             actual_checksum = DataIntegrity.calculate_md5(data)
-        elif algorithm.lower() == 'sha256':
+        elif algorithm.lower() == "sha256":
             actual_checksum = DataIntegrity.calculate_sha256(data)
-        elif algorithm.lower() == 'crc32':
-            actual_checksum = format(DataIntegrity.calculate_crc32(data), '08x')
+        elif algorithm.lower() == "crc32":
+            actual_checksum = format(DataIntegrity.calculate_crc32(data), "08x")
         else:
             raise ValueError(f"Unsupported algorithm: {algorithm}")
 
@@ -101,11 +103,11 @@ class DataIntegrity:
     def compare_files(file1_path: Union[str, Path], file2_path: Union[str, Path]) -> bool:
         """
         Compare two files for equality using checksums
-        
+
         Args:
             file1_path: Path to first file
             file2_path: Path to second file
-            
+
         Returns:
             True if files are identical, False otherwise
         """
@@ -128,12 +130,12 @@ class DataIntegrity:
     def _compare_files_chunked(file1_path: Path, file2_path: Path, chunk_size: int = 8192) -> bool:
         """
         Compare two files chunk by chunk to handle large files efficiently
-        
+
         Args:
             file1_path: Path to first file
             file2_path: Path to second file
             chunk_size: Size of chunks to read at a time
-            
+
         Returns:
             True if files are identical, False otherwise
         """
@@ -141,7 +143,7 @@ class DataIntegrity:
             return False
 
         try:
-            with open(file1_path, 'rb') as f1, open(file2_path, 'rb') as f2:
+            with open(file1_path, "rb") as f1, open(file2_path, "rb") as f2:
                 while True:
                     chunk1 = f1.read(chunk_size)
                     chunk2 = f2.read(chunk_size)

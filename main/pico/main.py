@@ -25,23 +25,23 @@ class NANDFlasher:
 
         # Initialize NAND interface pins
         self.io_pins = [
-            Pin(5, Pin.IN, Pin.PULL_UP),   # I/O0 - GP5
-            Pin(6, Pin.IN, Pin.PULL_UP),   # I/O1 - GP6
-            Pin(7, Pin.IN, Pin.PULL_UP),   # I/O2 - GP7
-            Pin(8, Pin.IN, Pin.PULL_UP),   # I/O3 - GP8
-            Pin(9, Pin.IN, Pin.PULL_UP),   # I/O4 - GP9
+            Pin(5, Pin.IN, Pin.PULL_UP),  # I/O0 - GP5
+            Pin(6, Pin.IN, Pin.PULL_UP),  # I/O1 - GP6
+            Pin(7, Pin.IN, Pin.PULL_UP),  # I/O2 - GP7
+            Pin(8, Pin.IN, Pin.PULL_UP),  # I/O3 - GP8
+            Pin(9, Pin.IN, Pin.PULL_UP),  # I/O4 - GP9
             Pin(10, Pin.IN, Pin.PULL_UP),  # I/O5 - GP10
             Pin(11, Pin.IN, Pin.PULL_UP),  # I/O6 - GP11
-            Pin(12, Pin.IN, Pin.PULL_UP)   # I/O7 - GP12
+            Pin(12, Pin.IN, Pin.PULL_UP),  # I/O7 - GP12
         ]
 
         # Control pins
-        self.cle_pin = Pin(13, Pin.OUT)    # CLE - GP13
-        self.ale_pin = Pin(14, Pin.OUT)    # ALE - GP14
-        self.ce_pin = Pin(15, Pin.OUT)     # CE# - GP15
-        self.re_pin = Pin(16, Pin.OUT)     # RE# - GP16
-        self.we_pin = Pin(17, Pin.OUT)     # WE# - GP17
-        self.rb_pin = Pin(18, Pin.IN, Pin.PULL_UP)      # R/B# - GP18
+        self.cle_pin = Pin(13, Pin.OUT)  # CLE - GP13
+        self.ale_pin = Pin(14, Pin.OUT)  # ALE - GP14
+        self.ce_pin = Pin(15, Pin.OUT)  # CE# - GP15
+        self.re_pin = Pin(16, Pin.OUT)  # RE# - GP16
+        self.we_pin = Pin(17, Pin.OUT)  # WE# - GP17
+        self.rb_pin = Pin(18, Pin.IN, Pin.PULL_UP)  # R/B# - GP18
 
         # Initialize control pins to inactive state
         self.cle_pin.value(0)
@@ -53,29 +53,119 @@ class NANDFlasher:
         # Supported NAND chips database
         self.supported_nand = {
             # Samsung
-            "Samsung K9F4G08U0A": {"id": [0xEC, 0xD3], "page_size": 2048, "block_size": 128, "blocks": 4096},
-            "Samsung K9F1G08U0A": {"id": [0xEC, 0xF1], "page_size": 2048, "block_size": 128, "blocks": 2048},
-            "Samsung K9F1G08R0A": {"id": [0xEC, 0xF1], "page_size": 2048, "block_size": 64, "blocks": 2048},
-            "Samsung K9GAG08U0M": {"id": [0xEC, 0xD5], "page_size": 4096, "block_size": 256, "blocks": 8192},
-            "Samsung K9T1G08U0M": {"id": [0xEC, 0xF1], "page_size": 2048, "block_size": 128, "blocks": 1024},
-            "Samsung K9F2G08U0M": {"id": [0xEC, 0xDA], "page_size": 2048, "block_size": 128, "blocks": 2048},
+            "Samsung K9F4G08U0A": {
+                "id": [0xEC, 0xD3],
+                "page_size": 2048,
+                "block_size": 128,
+                "blocks": 4096,
+            },
+            "Samsung K9F1G08U0A": {
+                "id": [0xEC, 0xF1],
+                "page_size": 2048,
+                "block_size": 128,
+                "blocks": 2048,
+            },
+            "Samsung K9F1G08R0A": {
+                "id": [0xEC, 0xF1],
+                "page_size": 2048,
+                "block_size": 64,
+                "blocks": 2048,
+            },
+            "Samsung K9GAG08U0M": {
+                "id": [0xEC, 0xD5],
+                "page_size": 4096,
+                "block_size": 256,
+                "blocks": 8192,
+            },
+            "Samsung K9T1G08U0M": {
+                "id": [0xEC, 0xF1],
+                "page_size": 2048,
+                "block_size": 128,
+                "blocks": 1024,
+            },
+            "Samsung K9F2G08U0M": {
+                "id": [0xEC, 0xDA],
+                "page_size": 2048,
+                "block_size": 128,
+                "blocks": 2048,
+            },
             # Hynix
-            "Hynix HY27US08281A": {"id": [0xAD, 0xF1], "page_size": 2048, "block_size": 128, "blocks": 1024},
-            "Hynix H27UBG8T2A": {"id": [0xAD, 0xD3], "page_size": 4096, "block_size": 256, "blocks": 8192},
-            "Hynix HY27UF082G2B": {"id": [0xAD, 0xF1], "page_size": 2048, "block_size": 128, "blocks": 2048},
-            "Hynix H27U4G8F2D": {"id": [0xAD, 0xD5], "page_size": 4096, "block_size": 256, "blocks": 4096},
-            "Hynix H27U4G8F2DTR": {"id": [0xAD, 0xD5], "page_size": 4096, "block_size": 256, "blocks": 4096},
+            "Hynix HY27US08281A": {
+                "id": [0xAD, 0xF1],
+                "page_size": 2048,
+                "block_size": 128,
+                "blocks": 1024,
+            },
+            "Hynix H27UBG8T2A": {
+                "id": [0xAD, 0xD3],
+                "page_size": 4096,
+                "block_size": 256,
+                "blocks": 8192,
+            },
+            "Hynix HY27UF082G2B": {
+                "id": [0xAD, 0xF1],
+                "page_size": 2048,
+                "block_size": 128,
+                "blocks": 2048,
+            },
+            "Hynix H27U4G8F2D": {
+                "id": [0xAD, 0xD5],
+                "page_size": 4096,
+                "block_size": 256,
+                "blocks": 4096,
+            },
+            "Hynix H27U4G8F2DTR": {
+                "id": [0xAD, 0xD5],
+                "page_size": 4096,
+                "block_size": 256,
+                "blocks": 4096,
+            },
             # Toshiba
-            "Toshiba TC58NVG2S3E": {"id": [0x98, 0xDA], "page_size": 2048, "block_size": 128, "blocks": 2048},
-            "Toshiba TC58NVG3S0F": {"id": [0x98, 0xF1], "page_size": 4096, "block_size": 256, "blocks": 4096},
+            "Toshiba TC58NVG2S3E": {
+                "id": [0x98, 0xDA],
+                "page_size": 2048,
+                "block_size": 128,
+                "blocks": 2048,
+            },
+            "Toshiba TC58NVG3S0F": {
+                "id": [0x98, 0xF1],
+                "page_size": 4096,
+                "block_size": 256,
+                "blocks": 4096,
+            },
             # Micron
-            "Micron MT29F4G08ABA": {"id": [0x2C, 0xDC], "page_size": 4096, "block_size": 256, "blocks": 4096},
-            "Micron MT29F8G08ABACA": {"id": [0x2C, 0x68], "page_size": 4096, "block_size": 256, "blocks": 8192},
+            "Micron MT29F4G08ABA": {
+                "id": [0x2C, 0xDC],
+                "page_size": 4096,
+                "block_size": 256,
+                "blocks": 4096,
+            },
+            "Micron MT29F8G08ABACA": {
+                "id": [0x2C, 0x68],
+                "page_size": 4096,
+                "block_size": 256,
+                "blocks": 8192,
+            },
             # Intel
-            "Intel JS29F32G08AAMC1": {"id": [0x89, 0xD3], "page_size": 4096, "block_size": 256, "blocks": 8192},
-            "Intel JS29F64G08ACMF3": {"id": [0x89, 0xD7], "page_size": 4096, "block_size": 256, "blocks": 16384},
+            "Intel JS29F32G08AAMC1": {
+                "id": [0x89, 0xD3],
+                "page_size": 4096,
+                "block_size": 256,
+                "blocks": 8192,
+            },
+            "Intel JS29F64G08ACMF3": {
+                "id": [0x89, 0xD7],
+                "page_size": 4096,
+                "block_size": 256,
+                "blocks": 16384,
+            },
             # SanDisk
-            "SanDisk SDTNQGAMA-008G": {"id": [0x45, 0xD7], "page_size": 4096, "block_size": 256, "blocks": 8192}
+            "SanDisk SDTNQGAMA-008G": {
+                "id": [0x45, 0xD7],
+                "page_size": 4096,
+                "block_size": 256,
+                "blocks": 8192,
+            },
         }
 
         self.current_nand = (None, None)
@@ -93,16 +183,16 @@ class NANDFlasher:
             data = self.uart.readline()
             if data:
                 try:
-                    cmd = data.decode('utf-8').strip()
+                    cmd = data.decode("utf-8").strip()
                 except:
-                    cmd = ''
-                if cmd == 'CANCEL':
+                    cmd = ""
+                if cmd == "CANCEL":
                     self.cancelled = True
                     return True
-                if cmd == 'PAUSE':
+                if cmd == "PAUSE":
                     self.paused = True
                     self.uart.write("PAUSED\n")
-                if cmd == 'RESUME':
+                if cmd == "RESUME":
                     self.paused = False
         # If paused, spin until resume or cancel
         while self.paused:
@@ -110,13 +200,13 @@ class NANDFlasher:
                 data2 = self.uart.readline()
                 if data2:
                     try:
-                        cmd2 = data2.decode('utf-8').strip()
+                        cmd2 = data2.decode("utf-8").strip()
                     except:
-                        cmd2 = ''
-                    if cmd2 == 'RESUME':
+                        cmd2 = ""
+                    if cmd2 == "RESUME":
                         self.paused = False
                         break
-                    if cmd2 == 'CANCEL':
+                    if cmd2 == "CANCEL":
                         self.cancelled = True
                         return True
             time.sleep_ms(5)
@@ -183,7 +273,7 @@ class NANDFlasher:
         # Read data
         data = 0
         for i, pin in enumerate(self.io_pins):
-            data |= (pin.value() << i)
+            data |= pin.value() << i
 
         self.re_pin.value(1)
 
@@ -202,7 +292,7 @@ class NANDFlasher:
 
     def send_command(self, cmd):
         """Send command to NAND"""
-        self.ce_pin.value(0)   # Activate CE#
+        self.ce_pin.value(0)  # Activate CE#
         self.cle_pin.value(1)  # Set CLE
         self.write_byte(cmd)
         self.cle_pin.value(0)  # Reset CLE
@@ -253,7 +343,7 @@ class NANDFlasher:
             nand_id = self.read_nand_id()
 
             for name, info in self.supported_nand.items():
-                if nand_id[:len(info["id"])] == info["id"]:
+                if nand_id[: len(info["id"])] == info["id"]:
                     return (name, info)
             return (None, None)
         except Exception:
@@ -385,7 +475,7 @@ class NANDFlasher:
         """Read command from UART"""
         data = self.uart.readline()
         if data:
-            return data.decode('utf-8').strip()
+            return data.decode("utf-8").strip()
         return ""
 
     def send_status(self):
@@ -530,13 +620,13 @@ class NANDFlasher:
             self.uart.write("NAND_NOT_CONNECTED\n")
             return
         try:
-            if cmd == 'READ':
+            if cmd == "READ":
                 self.read_nand_operation()
-            elif cmd == 'WRITE':
+            elif cmd == "WRITE":
                 self.write_nand_operation(True)
-            elif cmd == 'WRITE_NO_OOB':
+            elif cmd == "WRITE_NO_OOB":
                 self.write_nand_operation(False)
-            elif cmd == 'ERASE':
+            elif cmd == "ERASE":
                 self.erase_nand_operation()
         except Exception:
             self.uart.write("OPERATION_FAILED\n")
@@ -579,10 +669,10 @@ class NANDFlasher:
                 while True:
                     cmd = self.wait_for_command()
                     if cmd:
-                        if cmd.lower() == 'y':
+                        if cmd.lower() == "y":
                             self.current_nand = self.select_nand_manually()
                             break
-                        elif cmd.lower() == 'n':
+                        elif cmd.lower() == "n":
                             sys.exit()
                     if time.ticks_diff(time.ticks_ms(), start_wait) > timeout:
                         sys.exit()
@@ -595,22 +685,22 @@ class NANDFlasher:
                 if not cmd:
                     continue
 
-                if cmd == 'STATUS':
+                if cmd == "STATUS":
                     self.send_status()
-                elif cmd in ['READ', 'WRITE', 'ERASE', 'WRITE_NO_OOB']:
+                elif cmd in ["READ", "WRITE", "ERASE", "WRITE_NO_OOB"]:
                     self.handle_operation(cmd)
-                elif cmd == 'CANCEL':
+                elif cmd == "CANCEL":
                     # Set flag so any ongoing op can stop quickly
                     self.cancelled = True
                     self.uart.write("OPERATION_CANCELLED\n")
-                elif cmd == 'PAUSE':
+                elif cmd == "PAUSE":
                     self.paused = True
                     self.uart.write("PAUSED\n")
-                elif cmd == 'RESUME':
+                elif cmd == "RESUME":
                     self.paused = False
-                elif cmd == 'EXIT':
+                elif cmd == "EXIT":
                     sys.exit()
-                elif cmd == 'REDETECT':
+                elif cmd == "REDETECT":
                     # Break inner loop to re-detect
                     break
 

@@ -2,6 +2,7 @@
 Configuration management module for Pico NAND Flasher
 Handles application settings, defaults, and configuration persistence.
 """
+
 import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -11,6 +12,7 @@ from typing import Any, Optional
 @dataclass
 class AppSettings:
     """Application settings dataclass"""
+
     # Connection settings
     default_baudrate: int = 921600
     connection_timeout: int = 10
@@ -22,7 +24,7 @@ class AppSettings:
     chunk_size: int = 4096
     verify_after_write: bool = True
     include_oob: bool = False  # Include OOB (spare) area in dumps
-    enable_ecc: bool = False   # Enable ECC verification/correction when possible
+    enable_ecc: bool = False  # Enable ECC verification/correction when possible
     ecc_scheme: str = "crc16"  # none|crc16|hamming_512_3byte (future)
     ecc_sector_size: int = 512
     ecc_bytes_per_sector: int = 2
@@ -54,7 +56,9 @@ class ConfigManager:
         Args:
             config_path: Path to configuration file. If None, uses default location
         """
-        self.config_path = Path(config_path) if config_path else Path.home() / ".pico_nand_flasher" / "config.json"
+        self.config_path = (
+            Path(config_path) if config_path else Path.home() / ".pico_nand_flasher" / "config.json"
+        )
         self.settings = AppSettings()
         self.load_config()
 
@@ -67,7 +71,7 @@ class ConfigManager:
         """
         try:
             if self.config_path.exists():
-                with open(self.config_path, encoding='utf-8') as f:
+                with open(self.config_path, encoding="utf-8") as f:
                     config_data = json.load(f)
 
                 # Update settings with loaded data
@@ -94,7 +98,7 @@ class ConfigManager:
         try:
             self.config_path.parent.mkdir(parents=True, exist_ok=True)
 
-            with open(self.config_path, 'w', encoding='utf-8') as f:
+            with open(self.config_path, "w", encoding="utf-8") as f:
                 json.dump(asdict(self.settings), f, indent=2, ensure_ascii=False)
 
             return True
