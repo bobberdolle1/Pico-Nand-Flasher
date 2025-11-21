@@ -115,11 +115,10 @@ class CLIInterface:
         Perform read operation
 
         Args:
-            output_file: Path to save the dump
-
-        Returns:
-            True if successful, False otherwise
-        """
+                        output_file: Path to save the dump
+            
+                    Returns:
+                        True if successful, False otherwise        """
 
         def progress_callback(progress: int):
             print(f"\rRead progress: {progress}%", end="", flush=True)
