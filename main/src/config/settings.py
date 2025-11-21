@@ -105,7 +105,7 @@ class ConfigManager:
     def get(self, key: str, default: Any = None) -> Any:
         """
         Get a configuration value
-        
+
         Args:
             key: Configuration key
             default: Default value if key doesn't exist
