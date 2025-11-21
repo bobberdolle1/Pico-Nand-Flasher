@@ -6,7 +6,6 @@ Implements a plugin architecture for supporting different NAND chip types
 import importlib.util
 import os
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
 
 
 class NANDChipPlugin(ABC):
@@ -26,7 +25,7 @@ class NANDChipPlugin(ABC):
 
     @property
     @abstractmethod
-    def chip_id(self) -> List[int]:
+    def chip_id(self) -> list[int]:
         """Chip ID bytes for identification"""
         pass
 
@@ -74,14 +73,16 @@ class NANDChipPlugin(ABC):
             return 5
 
     @abstractmethod
-    def get_timing_params(self) -> Dict[str, int]:
+    def get_timing_params(self) -> dict[str, int]:
         """Get timing parameters for this chip"""
         pass
 
     def get_description(self) -> str:
         """Get a human-readable description of the chip"""
         size_mb = self.total_size / (1024 * 1024)
-        return f"{self.manufacturer} {self.name} - {size_mb:.0f}MB ({self.page_size}B x {self.block_size} x {self.total_blocks})"
+        description = f"{self.manufacturer} {self.name} - {size_mb:.0f}MB"
+        details = f"({self.page_size}B x {self.block_size} x {self.total_blocks})"
+        return f"{description} {details}"
 
 
 class PluginManager:
@@ -114,7 +115,8 @@ class PluginManager:
                     and attr != NANDChipPlugin
                 ):
                     plugin_instance = attr()
-                    plugin_key = f"file_{os.path.basename(file_path)}_{plugin_instance.name.lower().replace(' ', '_')}"
+                    plugin_name = plugin_instance.name.lower().replace(' ', '_')
+                    plugin_key = f"file_{os.path.basename(file_path)}_{plugin_name}"
                     self.plugins[plugin_key] = plugin_instance
                     return True
 
@@ -133,18 +135,18 @@ class PluginManager:
                 file_path = os.path.join(directory, filename)
                 self.load_plugin_from_file(file_path)
 
-    def get_all_plugins(self) -> List[NANDChipPlugin]:
+    def get_all_plugins(self) -> list[NANDChipPlugin]:
         """Get all loaded plugins"""
         return list(self.plugins.values())
 
-    def find_plugin_by_id(self, chip_id: List[int]) -> Optional[NANDChipPlugin]:
+    def find_plugin_by_id(self, chip_id: list[int]) -> NANDChipPlugin | None:
         """Find a plugin that matches the given chip ID"""
         for plugin in self.plugins.values():
             if plugin.chip_id == chip_id[: len(plugin.chip_id)]:
                 return plugin
         return None
 
-    def get_plugin_by_name(self, name: str) -> Optional[NANDChipPlugin]:
+    def get_plugin_by_name(self, name: str) -> NANDChipPlugin | None:
         """Get a plugin by its name"""
         for plugin in self.plugins.values():
             if plugin.name.lower() == name.lower():
@@ -167,7 +169,7 @@ class SamsungK9F4G08U0A(NANDChipPlugin):
         return "Samsung"
 
     @property
-    def chip_id(self) -> List[int]:
+    def chip_id(self) -> list[int]:
         return [0xEC, 0xD3]  # Samsung K9F4G08U0A ID
 
     @property
@@ -182,7 +184,7 @@ class SamsungK9F4G08U0A(NANDChipPlugin):
     def total_blocks(self) -> int:
         return 4096  # 4096 blocks
 
-    def get_timing_params(self) -> Dict[str, int]:
+    def get_timing_params(self) -> dict[str, int]:
         return {
             "tWC": 25,  # Write cycle time (ns)
             "tRC": 25,  # Read cycle time (ns)
@@ -206,7 +208,7 @@ class HynixHY27UF082G2B(NANDChipPlugin):
         return "Hynix"
 
     @property
-    def chip_id(self) -> List[int]:
+    def chip_id(self) -> list[int]:
         return [0xAD, 0xF1]  # Hynix HY27UF082G2B ID
 
     @property
@@ -221,7 +223,7 @@ class HynixHY27UF082G2B(NANDChipPlugin):
     def total_blocks(self) -> int:
         return 2048  # 2048 blocks
 
-    def get_timing_params(self) -> Dict[str, int]:
+    def get_timing_params(self) -> dict[str, int]:
         return {
             "tWC": 30,  # Write cycle time (ns)
             "tRC": 30,  # Read cycle time (ns)
@@ -245,7 +247,7 @@ class ToshibaTC58NVG2S3E(NANDChipPlugin):
         return "Toshiba"
 
     @property
-    def chip_id(self) -> List[int]:
+    def chip_id(self) -> list[int]:
         return [0x98, 0xDA]  # Toshiba TC58NVG2S3E ID
 
     @property
@@ -260,7 +262,7 @@ class ToshibaTC58NVG2S3E(NANDChipPlugin):
     def total_blocks(self) -> int:
         return 2048  # 2048 blocks
 
-    def get_timing_params(self) -> Dict[str, int]:
+    def get_timing_params(self) -> dict[str, int]:
         return {
             "tWC": 20,  # Write cycle time (ns)
             "tRC": 20,  # Read cycle time (ns)
@@ -280,7 +282,7 @@ class CustomNANDChip(NANDChipPlugin):
         self,
         name: str,
         manufacturer: str,
-        chip_id: List[int],
+        chip_id: list[int],
         page_size: int,
         block_size: int,
         total_blocks: int,
@@ -301,7 +303,7 @@ class CustomNANDChip(NANDChipPlugin):
         return self._manufacturer
 
     @property
-    def chip_id(self) -> List[int]:
+    def chip_id(self) -> list[int]:
         return self._chip_id
 
     @property
@@ -316,7 +318,7 @@ class CustomNANDChip(NANDChipPlugin):
     def total_blocks(self) -> int:
         return self._total_blocks
 
-    def get_timing_params(self) -> Dict[str, int]:
+    def get_timing_params(self) -> dict[str, int]:
         # Default conservative timings
         return {"tWC": 30, "tRC": 30, "tREA": 20, "tRP": 15, "tWP": 15, "tBERS": 3000, "tPROG": 700}
 

@@ -6,12 +6,11 @@ Provides comprehensive logging capabilities with different log levels and output
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
 
 
 def setup_logging(
     level: int = logging.INFO,
-    log_file: Optional[str] = None,
+    log_file: str | None = None,
     console_level: int = logging.INFO,
     file_level: int = logging.DEBUG,
 ) -> logging.Logger:

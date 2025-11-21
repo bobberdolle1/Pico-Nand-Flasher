@@ -6,14 +6,13 @@ Provides checksum and verification capabilities for data validation
 import hashlib
 import zlib
 from pathlib import Path
-from typing import Tuple, Union
 
 
 class DataIntegrity:
     """Data integrity verification utilities"""
 
     @staticmethod
-    def calculate_md5(data: Union[bytes, str]) -> str:
+    def calculate_md5(data: bytes | str) -> str:
         """
         Calculate MD5 checksum of data
 
@@ -31,7 +30,7 @@ class DataIntegrity:
         return md5_hash.hexdigest()
 
     @staticmethod
-    def calculate_sha256(data: Union[bytes, str]) -> str:
+    def calculate_sha256(data: bytes | str) -> str:
         """
         Calculate SHA-256 checksum of data
 
@@ -49,7 +48,7 @@ class DataIntegrity:
         return sha256_hash.hexdigest()
 
     @staticmethod
-    def calculate_crc32(data: Union[bytes, str]) -> int:
+    def calculate_crc32(data: bytes | str) -> int:
         """
         Calculate CRC32 checksum of data
 
@@ -66,8 +65,8 @@ class DataIntegrity:
 
     @staticmethod
     def verify_file_integrity(
-        file_path: Union[str, Path], expected_checksum: str, algorithm: str = "md5"
-    ) -> Tuple[bool, str]:
+        file_path: str | Path, expected_checksum: str, algorithm: str = "md5"
+    ) -> tuple[bool, str]:
         """
         Verify the integrity of a file against an expected checksum
 
@@ -100,7 +99,7 @@ class DataIntegrity:
         return is_valid, actual_checksum
 
     @staticmethod
-    def compare_files(file1_path: Union[str, Path], file2_path: Union[str, Path]) -> bool:
+    def compare_files(file1_path: str | Path, file2_path: str | Path) -> bool:
         """
         Compare two files for equality using checksums
 

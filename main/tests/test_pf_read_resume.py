@@ -92,7 +92,8 @@ def test_read_resume_crc_match_discards_previous(tmp_path, monkeypatch):
     ctrl.ser = FakeSerialBinary(seq_full)
     data = ctrl.read_nand()
     assert data is not None
-    # Since last_page=1, previously read first page (64 bytes) should be discarded; only page1 remains
+    # Since last_page=1, previously read first page (64 bytes) should be discarded; 
+    # only page1 remains
     assert (
         len(data) == 128
     )  # because our logic appends payloads even after discard crossing, and two payloads of 64

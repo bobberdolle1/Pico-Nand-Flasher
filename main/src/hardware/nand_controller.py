@@ -8,7 +8,6 @@ import struct
 import time
 import zlib
 from pathlib import Path
-from typing import Dict, Optional, Tuple
 
 import serial
 
@@ -25,7 +24,7 @@ class NANDController:
 
     def __init__(self):
         self.logger = get_logger()
-        self.ser: Optional[serial.Serial] = None
+        self.ser: serial.Serial | None = None
         self.is_connected = False
         self.current_nand_info = None
         self.baudrate = config_manager.get("default_baudrate")
@@ -203,7 +202,7 @@ class NANDController:
                     self.ser.write(b"EXIT\n")
                 else:
                     self.ser.write(b"EXIT\n")
-            except:
+            except (OSError, AttributeError):
                 pass
             self.ser.close()
             self.is_connected = False
@@ -226,7 +225,7 @@ class NANDController:
         data = self._frame(cmd, payload)
         self.ser.write(data)
 
-    def _read_exact(self, n: int, timeout: Optional[float] = None) -> Optional[bytes]:
+    def _read_exact(self, n: int, timeout: float | None = None) -> bytes | None:
         """Read exactly n bytes or return None on timeout."""
         if not self.ser:
             return None
@@ -242,7 +241,7 @@ class NANDController:
                 time.sleep(0.005)
         return bytes(buf) if len(buf) == n else None
 
-    def _read_frame(self, timeout: Optional[float] = None) -> Optional[Tuple[int, bytes]]:
+    def _read_frame(self, timeout: float | None = None) -> tuple[int, bytes] | None:
         """Read one framed packet and verify CRC. Returns (cmd, payload) or None on timeout/error."""
         to = timeout or self.timeout
         start = time.time()
@@ -280,7 +279,7 @@ class NANDController:
     # =====================
     # Resume state helpers
     # =====================
-    def _load_resume_state(self) -> Dict:
+    def _load_resume_state(self) -> dict:
         try:
             if self._resume_path.exists():
                 with open(self._resume_path, encoding="utf-8") as f:
@@ -289,7 +288,7 @@ class NANDController:
             self.logger.warning(f"Failed to load resume state: {e}")
         return {}
 
-    def _save_resume_state(self, state: Dict) -> None:
+    def _save_resume_state(self, state: dict) -> None:
         try:
             self._resume_path.parent.mkdir(parents=True, exist_ok=True)
             with open(self._resume_path, "w", encoding="utf-8") as f:
@@ -297,7 +296,7 @@ class NANDController:
         except Exception as e:
             self.logger.warning(f"Failed to save resume state: {e}")
 
-    def get_resume_state(self) -> Dict:
+    def get_resume_state(self) -> dict:
         """Expose current resume state (or empty dict)."""
         return self._load_resume_state()
 
@@ -343,7 +342,7 @@ class NANDController:
         except Exception as e:
             self.logger.error(f"Error sending command: {e}")
 
-    def read_response(self, timeout: Optional[float] = None) -> Optional[str]:
+    def read_response(self, timeout: float | None = None) -> str | None:
         """
         Read a response from the Pico device
 
@@ -407,7 +406,7 @@ class NANDController:
             self.logger.error(f"Error reading response: {e}")
             return None
 
-    def detect_nand(self) -> Tuple[bool, Optional[str], Optional[Dict]]:
+    def detect_nand(self) -> tuple[bool, str | None, dict | None]:
         """
         Detect connected NAND chip
 
@@ -433,7 +432,7 @@ class NANDController:
         self.logger.info("NAND not detected, manual selection may be required")
         return False, None, None
 
-    def read_nand(self, progress_callback=None) -> Optional[bytes]:
+    def read_nand(self, progress_callback=None) -> bytes | None:
         """
         Read data from NAND
 
@@ -841,7 +840,7 @@ class NANDController:
         try:
             # Host-side ERASE resume handling by tracking progress
             resume = self._load_resume_state()
-            last_block = (
+            (
                 int(resume.get("erase_block", 0)) if resume.get("operation") == "ERASE" else 0
             )
             if self.use_binary:
