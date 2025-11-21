@@ -1104,7 +1104,8 @@ class OperationThread(QThread):
                                     with open(self.dump_path, "rb") as f:
                                         chunk = f.read(4096)
                                         while chunk:
-                                            # Check for pause/cancel from GUI sending through serial is handled by Pico
+                                            # Check for pause/cancel from GUI sending through 
+                                            # serial is handled by Pico
                                             self.ser.write(chunk)
                                             sent += len(chunk)
                                             pct = int(sent * 100 / total_size) if total_size else 0

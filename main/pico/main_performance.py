@@ -325,7 +325,7 @@ class NANDFlasher:
             raw_value = self.vsys_adc.read_u16()
             voltage = (raw_value * self.vref / 65535) * self.adc_to_voltage_factor
             return voltage
-        except:
+        except Exception:
             return 0.0  # Return 0 if measurement fails
 
     def check_power_supply(self):

@@ -261,7 +261,8 @@ class DumpAnalyzer(QMainWindow):
                     self.dump_data = f.read()
                 self.dump_path = file_path
                 self.status_bar.showMessage(
-                    f"Загружен дамп: {os.path.basename(file_path)}, размер: {len(self.dump_data)} байт"
+                    f"Загружен дамп: {os.path.basename(file_path)}, "
+                    f"размер: {len(self.dump_data)} байт"
                 )
 
                 # Refresh all views
@@ -302,7 +303,8 @@ class DumpAnalyzer(QMainWindow):
                     self.second_dump_data = f.read()
                 self.second_dump_path = file_path
                 self.status_bar.showMessage(
-                    f"Второй дамп: {os.path.basename(file_path)}, размер: {len(self.second_dump_data)} байт"
+                    f"Второй дамп: {os.path.basename(file_path)}, "
+                    f"размер: {len(self.second_dump_data)} байт"
                 )
                 if self.dump_data:
                     self.calculate_diff()
@@ -431,7 +433,8 @@ class DumpAnalyzer(QMainWindow):
         page_total = self.page_size + self.spare_size
         total_pages = len(self.dump_data) // page_total if page_total > 0 else 0
         bad_blocks = set()
-        # Простейшая эвристика: если в первом байте OOB страницы значение не 0xFF, помечать блок как bad
+        # Простейшая эвристика: если в первом байте OOB страницы 
+        # значение не 0xFF, помечать блок как bad
         for p in range(total_pages):
             page_start = p * page_total
             oob_start = page_start + self.page_size
@@ -592,10 +595,12 @@ class DumpAnalyzer(QMainWindow):
             "Эвристика bad-block: первый байт OOB страницы не 0xFF — блок помечается плохим.\n"
             "Схема ECC: выбирается в Settings → ECC Parameters (none|crc16|hamming_512_3byte).\n\n"
             "Шаблоны расположения ECC в OOB (примеры):\n"
-            "- YAFFS-like (2K+64): 4 сектора по 512 байт, ECC по 3 байта на сектор в OOB смещениях [40..42], [43..45], [46..48], [49..51].\n"
+            "- YAFFS-like (2K+64): 4 сектора по 512 байт, ECC по 3 байта на "
+            "сектор в OOB смещениях [40..42], [43..45], [46..48], [49..51].\n"
             "- Samsung common (2K+64): 4×(3 байта ECC) начиная с 0x30 (48) — итого 12 байт ECC.\n"
             "- Legacy CRC16 (2 байта на страницу): начало OOB (смещение 0).\n\n"
-            "Примечание: точные смещения зависят от схемы контроллера/прошивки. Установите параметр ecc_oob_offset в Settings.\n"
+            "Примечание: точные смещения зависят от схемы "
+            "контроллера/прошивки. Установите параметр ecc_oob_offset в Settings.\n"
         )
         QMessageBox.information(self, "Справка/Легенда", msg)
 
@@ -692,7 +697,7 @@ class DumpAnalyzer(QMainWindow):
 
         # Create statistics text
         stats_text = f"""Статистика дампа:
-        
+
 Размер: {total_size:,} байт ({total_size / 1024 / 1024:.2f} МБ)
 
 Часто используемые байты:

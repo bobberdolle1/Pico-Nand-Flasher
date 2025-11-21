@@ -619,7 +619,8 @@ class NANDFlasherGUI:
                         with open(self.selected_dump + ".partial", "wb") as f:
                             f.write(dump_data)
                         print(
-                            f"\n⚠️ Операция прервана. Частичный дамп сохранен в: {self.selected_dump}.partial"
+                            f"\n⚠️ Операция прервана. "
+                            f"Частичный дамп сохранен в: {self.selected_dump}.partial"
                         )
                     except Exception:
                         pass

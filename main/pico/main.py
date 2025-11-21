@@ -184,7 +184,7 @@ class NANDFlasher:
             if data:
                 try:
                     cmd = data.decode("utf-8").strip()
-                except:
+                except Exception:
                     cmd = ""
                 if cmd == "CANCEL":
                     self.cancelled = True
@@ -201,7 +201,7 @@ class NANDFlasher:
                 if data2:
                     try:
                         cmd2 = data2.decode("utf-8").strip()
-                    except:
+                    except Exception:
                         cmd2 = ""
                     if cmd2 == "RESUME":
                         self.paused = False
@@ -353,7 +353,6 @@ class NANDFlasher:
         """Read a single page of data and spare area"""
         try:
             page_size = nand_info["page_size"]
-            block_size = nand_info["block_size"]
 
             # Step 1: Read command (00h)
             self.send_command(0x00)
@@ -396,7 +395,6 @@ class NANDFlasher:
         """Write a single page of data and spare area"""
         try:
             page_size = nand_info["page_size"]
-            block_size = nand_info["block_size"]
 
             # Step 1: Serial Data Input command (80h)
             self.send_command(0x80)
@@ -648,7 +646,7 @@ class NANDFlasher:
                     if 0 <= index < len(names):
                         name = names[index]
                         return (name, self.supported_nand[name])
-                except:
+                except Exception:
                     pass
 
     def main_loop(self):
