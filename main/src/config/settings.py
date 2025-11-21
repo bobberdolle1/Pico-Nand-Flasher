@@ -118,7 +118,7 @@ class ConfigManager:
     def set(self, key: str, value: Any) -> None:
         """
         Set a configuration value
-        
+
         Args:
             key: Configuration key
             value: Configuration value
